@@ -1,0 +1,1354 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WxTable 0.48</title>
+<style>
+/* WxTable 0.48 (2026-10-30): finger-sized controls on touch screens, as compact as before with a mouse (JG: "Phones
+   only"): buttons, dropdowns and text boxes at least 44 px tall, checkboxes 24 px, 16 px text in fields so Safari does
+   not zoom when one is tapped. ?touch=1 or ?touch=0 in the address forces one or the other. On a narrow touch screen
+   the top row breaks after the two choosers, so it stays two lines.
+   0.47 (2026-10-30): a Table type chooser first on Options, in step with the one in the top row (JG, of
+   "Settings for the table. Settings for another tab are on that tab.": "there needs to be a chooser for table types on
+   this tab").
+   0.46 (2026-10-30): on a phone held upright the top row did not fit: Explainer was cut off and Forecasting,
+   Climate, Options and About could not be reached. The row now goes on to a second line whenever it does not fit
+   (JG: "Second line", asked between a scrolling row and a second line); held sideways it stays one line. The small
+   table at the top of Explainer and Options is clipped at the screen's edge instead of making those tabs scroll
+   sideways (868 px wide on every phone in 0.45), and so is the style 4 sample in Options.
+   On a screen 560 px wide or less, each Options setting's sample goes on its own line under the setting.
+   About: This device moves to the end, after Data (JG: "\"This Device\" section should go at the end").
+   0.45 (2026-10-30): the ratings are hidden for now (JG: "I want to hide the ratings for now"); the rating
+   code and any ratings saved on a device stay, so they come back by removing the hidden attribute of #rateSec.
+   The Climate tab loads the 6- and 12-month copy, data\wx_climate_t12_2026-10-30.js (data\fetch_climate_t.py), so every
+   Climate column has data.
+   0.44 (2026-10-29): settings on the tab they change (JG: "Distribute \"Options\" to be more contextual, e.g.
+   climate settings should be on that page or if they become too numerous on an Options tab of that page"; "I see the
+   above is already done, so remove them from the main Options page"; "But include them in the Profile"). Options keeps
+   the table's settings and Profiles; Climate's columns are only on Climate; Weather Underground links moved to Locations;
+   Units are on Options, Explainer, Forecasting and Climate, kept in step. A profile still keeps all of them.
+   0.43 (2026-10-29): a "This device" readout under About (JG: "Yes, add it under About"): what the browser
+   reports and what the page can measure, with the screen and the window drawn to scale. It updates when the device turns,
+   the window changes or a setting changes. The "This prototype" section of About is gone (JG: "This prototype - remove
+   this section"). Two spaces between the precip chance and the amount (JG: "Put two spaces between precip % and amount").
+   Units adds precip amounts in inches or millimeters (JG: "Units should include metric rain / snow amounts").
+   Wide change arrows, drawn (JG: "The up and down arrows are microscopic: they need to be \"fat\" arrows"; "fat = wide arrows").
+   Alerts v03: the alert text links to the Weather Service's page for the place (JG: "Watches and Warnings: text needs to
+   include a link to authoritative source"). Climate: checkboxes for which columns show, on that tab and in Options (JG:
+   "Climate data: add options for time columns to show").
+   Locations, Saved sets: a note that they are stored on this device (JG: "add a note that these are stored on your device").
+   Climate: last 6 and 12 months beside 7, 30 and 90 days (JG: "Climate: why not add a 6 month and 12 month column"), from
+   data\wx_climate_t12_2026-10-29.js (data\fetch_climate_t.py).
+   Forecasting: "How much to trust each forecast day" (JG's wording); the Weather Underground note in plain words (JG, of
+   "among the top few, with small and shifting gaps": "no idea what this sentence means"), and the other Forecasting notes too
+   (JG: "\"keeps a little skill to about day 10\" - what?"). Each precip bar says "than the usual odds" in full (JG: "58% better
+   - than what? repeat key information").
+   0.42 (2026-10-29): the forecast-time choice is under Options, with all five styles shown there as samples; the
+   first choice is style 2, how old and how soon (JG: "Include all under Options, default is style 2"). The top-row chooser
+   and its "all five" choice are gone.
+   0.41 (2026-10-29): the forecast-time style chooser moves to the top row, after the days chooser, and "all five"
+   is one of its choices instead of a checkbox (JG: "Too much of a mess, I can't figure out what is test harness and what is
+   the style under test"). The line over the table now holds only the style under test.
+   0.40 (2026-10-29): a forecast-time line over the table (JG: "I would like to show what the weather apps don't:
+   time of the forecast and time of next forecast update in a compact format. Show me some options in a mockup."). Five
+   styles in a chooser right there, all five shown at once by default ("All styles"): 1 clock times, 2 how old and how soon,
+   3 time bars, 4 a band over the day headings, 5 rings. Times from Open-Meteo's model metadata (data\fetch_runs.py).
+   0.39 (2026-10-29): fixes from the pre-push review of 0.38: no change arrow when a day's high or precip chance is
+   missing in either copy; the paste example in degrees, minutes and seconds reads 35°05'02"N (35.084 is 5' 02.4").
+   0.38 (2026-10-29): 0.37 for the first testers: the places of JG's "North & South" set, in its order, with JG's
+   own place left out, as JG asked (the LOG has his words), and "Otherwise my current \"North & South\" set will be good for
+   initial testers". Albuquerque, Gallup, Farmington, Durango, Las Cruces and Scottsdale start checked; Cortez, Montrose, Moab and
+   Grand Junction follow. All data from the _t copies (data\fetch_testers.py); the sky codes are in the forecast copy itself.
+   Nothing in the page marks a place as anyone's own spot any more.
+   0.37 (2026-10-29): 0.36 with the fixes from the review before the first push of 0.13-0.36: Save Profile works
+   before every setting has been touched; the paste box acts on a paste, Enter or leaving the box, not on each keystroke;
+   Add cannot be pressed twice while a place is fetched; one unreadable saved place no longer resets the whole list;
+   no change arrow on a day with no high; the comfortable range is written in the chosen units.
+   0.36 (2026-10-29): 0.35 with F's warmest-high line at each row's own highest temperature, so each place's
+   bars are measured against its own warmest day (JG: "I meant for each row's highest").
+   0.35 (2026-10-29): 0.34 plus a new layout "E Basic graphics": the usual sun and cloud symbols with the high,
+   low, precip and gusts (JG: "Add E Basic graphics and use typical sun/cloud graphics"); the graphics layout of 0.26-0.34
+   is now "F Advanced graphics" (JG: "Change to F Advanced graphics"), with its settings and ratings. The symbols come from
+   Open-Meteo's daily weather code, data\wx_codes_2026-10-29.js (fetched 2:14 PM, apart from the forecast copy).
+   The days chooser sits right after the layout chooser (JG: "Move duration chooser next to the type of graphic").
+   0.34 (2026-10-29): 0.33 plus, in layout E, a faint gray line across every box at the table's highest temperature,
+   so each bar can be measured against the same mark (JG: "Under E, add an option to run a faint gray line across the cells
+   from the maximum temperature to allow visual comparison of relative magnitude"). On to start; off in Explainer or Options.
+   0.33 (2026-10-29): 0.32 with the layout chooser right after the Table tab (JG: "Move the format chooser after
+   Table in the top row").
+   0.32 (2026-10-29): 0.31 with About in the Rydn standard form (Rydn Share Buttons SPEC v07 §3 items 1-3): the
+   version as "WxTable v0.32 · 2026-10-29" like DoStack's "DoStack v30.1 · 2026-10-22", then the standard feedback line
+   with support@rydnsoftware.com, then the standard website heading with https://rydnsoftware.com (JG: "Version number in
+   About - use the standard format with date"; "Add website and email address").
+   0.31 (2026-10-29): 0.30 with Delete just after each place and set, not pushed to the far right (JG: "The Delete
+   buttons are too far to the right").
+   0.30 (2026-10-29): 0.29 without the copy's time in the strip (JG: "\"Copy 2026-10-29 12:35 PM\" - remove this");
+   the time stays in the Explainer's data line and in About.
+   0.29 (2026-10-29): 0.28 with E named "graphics", not "graphics (mockup)" (JG: "Remove (mockup) from the selector").
+   0.28 (2026-10-29): 0.27 with JG's checkboxes of 2:02 PM as the defaults (JG: "Save my current checkboxes as the
+   defaults"): E shows the temperature bar with numbers, precipitation, when in the day, and gusts; the usual range,
+   comfortable tint, fuzz, previous high and best day start off. Changes on and WU links off were already the defaults.
+   0.27 (2026-10-29): 0.26 with the Explainer turned around: what each thing means comes first, in the order
+   temperature, precipitation, then the smaller elements, each with a checkbox to turn it off, in step with Options (JG:
+   "In the Explainer, add a checkbox for each so that they can be turned off"; "The Explainer is inverted: the user does
+   not care about blue bar: they care about Precipitation"; "Begin with Temperature, then Precip, then smaller graphic
+   elements"). Layout E's bar, precip column and gust line can now be turned off too.
+   0.26 (2026-10-29): 0.25 plus layout E, a mockup of graphics in place of numbers (JG: "What are your ideas for
+   weather graphics that are better than the standard ones?", then "Show me mockups"); an About tab at the end (JG: "Add an
+   About tab at the end"); "WxTable 0.26" at the top left (JG: "Add WxTable and the version at the top left").
+   E's usual range comes from data\wx_normals_2026-10-29.js (Open-Meteo Historical Weather API, 1991-2020 by date).
+   0.25 (2026-10-29): 0.24 with "precip", not "rain", in every word on the page (JG: "And it's not rain, it's
+   precip"), and the Precip shows chooser only under Options (JG: "Do not show the Precip in the top row: only under
+   Options"). The table's corner gives the units only: "°F · % in · mph".
+   0.24 (2026-10-29): 0.23 without the stars after the layout names in the chooser (JG: "Do not show the stars");
+   the star rating itself stays on the Options tab (R24).
+   0.23 (2026-10-29): 0.22 without the message after adding a place (JG: "Remove this: Added GPS spot 2026-10-29
+   1:19 PM, checked, at the end of the list; forecast copy of 2026-10-29 1:19 PM."); only a failure is reported.
+   0.22 (2026-10-29): 0.21 with the four layouts named A to D (JG: "Rename the four options A-D"): A = 0.05 high and
+   low, B = 0.07 day and night, C = 0.08 one line, D = 0.09 gray; ratings stay with the same layouts (stored under the old
+   keys). The rain-accuracy chart says "the usual odds for the date", not "the calendar" (JG: "What do you mean when you say
+   'better than the calendar' - this is very confusing").
+   0.21 (2026-10-29): 0.20 with rain amounts as 0.1 (JG: "Leading decimals tend to vanish: use this format 0.1";
+   "Don't use < - it is pointless"); Undo in the place of a deleted location or set (JG: "After Delete add an Undo");
+   rain forecast accuracy on the Forecasting tab (JG: "Can we include Forecast accuracy for precip?").
+   0.20 (2026-10-29): 0.19 with the rain amount shown by default and the Rain shows choice on the Table tab too
+   (JG: "Where are the precip amounts?", then "Yes, do both"): default "Chance and amount"; a chooser in the strip beside
+   the days, kept in step with Options. A saved "Chance" from before 0.20 (the old default) moves once to "Chance and amount".
+   0.19 (2026-10-29): 0.18 with one compact column width whatever the number of days (JG: "5 days in the space of 10
+   affects visual scanning and memory: the data is too far apart"): 79 px a day (0.08: 77; 0.07: 56 a half), the widths
+   0.01-0.04 were drawn at for the Stylus held sideways; fewer days leave the right side empty, more scroll sideways.
+   The tables in Explainer and Options use the same widths.
+   0.18 (2026-10-29): 0.17 plus the rain that fell on past days (JG: "Past data must include amount of precip: this
+   is the main thing that matters"): a past day shows its amount (inches) whenever any fell, past days in 0.09 are grayed by
+   that amount, and 0.07's day and night halves now carry rain amounts too (the copy has hourly amounts since 12:35 PM).
+   0.17 (2026-10-29): 0.16 with the Climate tab's rain bars explained (JG: "Climate: no idea what the blue bars are
+   for"): each reads "% of normal" and is drawn on a track with a white mark at normal (100%), and a key above the table.
+   Days ahead: every count from 1 to 16 (JG: "Don't assume anything about the number of days: give all options"), on a new
+   16-day copy (data\wx_snapshot_d_2026-10-29.js); places added on the page fetch 16 days too.
+   0.16 (2026-10-29): 0.15 plus a settable rain threshold (JG: "Precip amount should be settable"): rain shows from a
+   chance of 10-50% and an amount of any, 0.01, 0.05, 0.10 or 0.25 in; the table, the 0.09 gray and the Explainer follow it.
+   0.15 (2026-10-29): 0.14 plus the number of days ahead to show, 3, 5, 7 or 10 (JG: "Allow setting the number of days
+   to show"), chosen in the strip beside the layout and in Options, kept in step; fewer days, wider columns.
+   0.14 (2026-10-29): 0.13 with Locations reworked on JG's word: "How do I add a location? And it's NOT my location -
+   it's any location"; "Stop the ON stuff, just add checkboxes"; "Also I need Delete buttons". Search, paste and GPS now ADD
+   a location to the list; its forecast, alerts and climate are fetched once, when it is added, and kept as its copy (question 6:
+   copies, not a fetch on every opening). Every place has a checkbox (in the table or not), a drag handle and Delete (with Undo).
+   On/off settings in Options are checkboxes too.
+   0.13: every requirement that can be prototyped so far (JG: "Create 0.12 in the tab group incorporating
+   all requests" - "I thought this was clear"). Tabs: Locations, Table, Explainer, Forecasting, Climate, Options (SRD R39, R27, R29).
+   Locations: add by live search, pasted position (with instructions) or GPS (R26); Near me; drag to reorder (R37);
+   Weather Underground links (R4). Table: scrolls left to the past 7 days (R28); arrows where the forecast changed since the
+   previous copy (R33). Explainer and Options show the table they are about (R43, JG 2026-10-29). Options: units °F/°C (R34),
+   small live graphics beside each setting (R30), Save Profile (R35), rating with an optional name (R36).
+   Data: fixed copies (question 6). House style: black, yellow active, press-flash, SuperToggle (Android_ERGONOMICS §4A). */
+:root { color-scheme: dark; --hi:#FFD700; --lo:#8CEBFF; --rain:#6CB8FF; --sec:#c3d1de; --dim:#8a96a3; --line:#333; --rh:40px; }
+html { scrollbar-color: #FFFFFF #222222; }
+html, body { margin:0; background:#000; color:#fff; font:12px/1.15 system-ui, "Segoe UI", Roboto, sans-serif; }
+button, select, input { background:#000; color:#fff; border:1px solid #fff; border-radius:8px; font-family:inherit; }
+button, select { cursor:pointer; }
+button.on { background:var(--hi); color:#000; border-color:var(--hi); font-weight:700; }
+button.flash { background:var(--hi) !important; color:#000 !important; }
+button.on.flash { background:#fff !important; }
+a { color:var(--lo); }
+[hidden] { display:none !important; }
+/* strip: the tabs, the layout chooser, the copy's time; one line */
+.strip { display:flex; flex-wrap:wrap; align-items:center; gap:2px 4px; min-height:26px; padding:0 4px; box-sizing:border-box; white-space:nowrap; }   /* a second line when it does not fit (0.46) */
+.strip button { font-size:12px; padding:2px 8px; }
+.strip select { font-size:12px; padding:2px 4px; max-width:24vw; }
+.strip .brand { font-weight:700; color:var(--hi); font-size:12px; margin-right:4px; }
+.c.g { padding:0; }
+.c.g svg { display:block; }
+.c.eb { padding:2px 0 0 3px; }
+.c.eb .ebtop { display:flex; align-items:center; gap:2px; }
+.c.eb .sky { flex:0 0 30px; display:block; height:24px; }
+.c.eb .ebt { display:flex; flex-direction:column; line-height:1.05; }
+.c.eb .ebt .lo { margin-left:0; }
+.strip .asof { margin-left:auto; color:var(--sec); font-size:10px; overflow:hidden; text-overflow:ellipsis; }
+/* forecast time (R65): when the forecast was made and when the next one is due, over the table */
+.ft { display:flex; flex-wrap:wrap; align-items:center; gap:3px 12px; padding:3px 4px; font-size:12px; color:var(--sec); }
+.ft b { color:#fff; font-weight:600; }
+.ftl { display:flex; flex-wrap:wrap; align-items:center; gap:2px 12px; font-size:12px; color:var(--sec); padding:2px 4px; }
+.ftl b { color:#fff; font-weight:600; }
+.ftl.on { outline:1px solid var(--hi); }   /* the style in use */
+.set .t.ftband { justify-self:start; max-width:100%; overflow:hidden; }   /* clipped at the row's edge on a narrow screen (0.46) */
+.ftbar { display:inline-block; position:relative; width:100px; height:8px; background:#333; vertical-align:middle; margin:0 5px; }
+.ftbar .fill { position:absolute; left:0; top:0; bottom:0; background:var(--sec); }
+.ftbar .now { position:absolute; top:-3px; bottom:-3px; width:2px; background:#fff; }
+.ftring { vertical-align:middle; margin-right:4px; }
+.t > .fband { height:16px; font-size:10px; color:var(--sec); padding:2px 0 0 4px; white-space:nowrap; background:#111; }
+.t > .fband.fcorner { position:sticky; left:0; z-index:2; background:#000; color:#fff; }
+/* the table */
+.tw { overflow-x:auto; overflow-y:hidden; }
+.tw > .t { width:max-content; }   /* as wide as its columns plus the space after them, so it can scroll today to the left */
+.t { display:grid; }
+.t > div { border-right:1px solid var(--line); border-bottom:1px solid var(--line); box-sizing:border-box; overflow:hidden; }
+.t.rows > div { border-right-color:transparent; }
+.t.cols > div { border-bottom-color:transparent; }
+.hd { height:18px; text-align:center; font-size:11px; color:var(--sec); padding-top:2px; }
+.hd.we { color:#fff; font-weight:600; }
+.hd.today { color:#000; background:var(--hi); font-weight:700; }
+.hd.past { color:var(--dim); font-style:italic; font-weight:400; }
+.l07 .hd { grid-column:span 2; }
+.corner, .nm { position:sticky; left:0; z-index:2; background:#000; }
+.corner { height:18px; font-size:9px; color:var(--sec); padding:3px 0 0 3px; white-space:nowrap; }
+.nm { height:var(--rh); padding:3px 0 0 4px; white-space:nowrap; }
+.nm b { font-size:12px; font-weight:600; display:block; overflow:hidden; text-overflow:ellipsis; }
+.nm span { font-size:9px; color:var(--sec); }
+.l08 .nm { padding-top:5px; font-size:12px; font-weight:600; text-overflow:ellipsis; }
+.c { height:var(--rh); padding:2px 0 0 4px; font-variant-numeric:tabular-nums; position:relative; cursor:default; }
+.c.past { opacity:.62; }
+.c .hi { color:var(--hi); font-weight:700; font-size:15px; text-shadow:0 0 2px #000; }
+.c .lo { color:var(--lo); font-size:12px; margin-left:3px; text-shadow:0 0 2px #000; }
+.l07 .c .lo { font-weight:700; font-size:14px; margin-left:0; }
+.c .l2 { display:flex; justify-content:space-between; padding-right:4px; margin-top:2px; font-size:11px; height:14px; white-space:nowrap; }
+.c .r { color:var(--rain); text-shadow:0 0 2px #000; }
+.c .r.big { font-weight:700; }
+.c .w { color:#fff; text-shadow:0 0 2px #000; }
+.c .w.over { background:var(--hi); color:#000; font-weight:700; padding:0 2px; border-radius:2px; text-shadow:none; }
+.chg { color:var(--lo); font-size:10px; font-weight:700; margin-left:2px; }
+.chg .fat { fill:var(--lo); vertical-align:0; }
+.c.todaycol { box-shadow:inset 2px 0 0 var(--hi); }
+.l07 .c.d { border-right-color:transparent; }
+.l07 .c.n { background:#161a22; }
+.c.one { padding:3px 3px 0 4px; display:flex; align-items:baseline; gap:4px; white-space:nowrap; }
+.c.one .hi { font-size:14px; }
+.c.one .r { font-size:11px; }
+.c.one .w { font-size:11px; margin-left:auto; }
+.tri { position:absolute; top:1px; right:3px; color:var(--hi); font-size:13px; line-height:1; }
+.tri.k1 { font-size:9px; top:2px; }
+.c.one .tri { position:static; font-size:11px; margin-left:-1px; }
+.c.one .tri.k1 { font-size:8px; }
+.empty { padding:16px 10px; font-size:14px; color:var(--sec); }
+#ab { position:fixed; left:0; right:0; bottom:0; padding:6px 8px; font-size:12px; color:#000; background:var(--hi); font-weight:600; cursor:pointer; z-index:5; }
+#ab:empty { display:none; }
+#ab a { color:#000; text-decoration:underline; }
+/* the other tabs */
+.pane { padding:6px 10px 28px; font-size:14px; line-height:1.35; }
+.pane h2 { font-size:14px; margin:12px 0 4px; color:var(--lo); }
+.pane h2:first-child { margin-top:4px; }
+.sec { color:var(--sec); font-size:12px; }
+.sec:empty { display:none; }
+/* About: This device */
+.dev { display:grid; grid-template-columns:max-content minmax(0, 1fr); gap:3px 12px; font-size:13px; max-width:640px; }
+.dev .k { color:var(--sec); }
+.dev .n { grid-column:2; color:var(--dim); font-size:12px; margin-top:-2px; }
+.dev .ua { grid-column:1 / -1; color:var(--dim); font-size:11px; overflow-wrap:anywhere; }
+.devpic { margin:4px 0 6px; }
+.devpic text { font-size:11px; fill:var(--sec); }
+.row2 { display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; }
+.pane input[type=text], .pane input[type=search] { font-size:14px; padding:4px 8px; width:260px; max-width:calc(100vw - 60px); }
+.pane select { font-size:14px; padding:3px 8px; }
+.btn { font-size:14px; padding:4px 12px; border-radius:10px; }
+.btn.wait { border:3px dashed #FFE800; padding:2px 10px; animation:pulse 1s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:.35 } }
+.info { font-size:13px; padding:2px 8px; border-radius:50%; }
+.help { border-left:3px solid var(--lo); padding:4px 8px; margin:4px 0; color:var(--sec); font-size:13px; }
+.hits button { display:block; margin:3px 0; font-size:13px; padding:3px 10px; text-align:left; }
+/* SuperToggle: the whole button is the toggle and says its state */
+.st { text-align:left; font-size:14px; padding:4px 10px; border-radius:8px; }
+.son { color:#FFD400; font-weight:700; }
+.soff { color:#fff; font-weight:400; }
+.st .d { color:var(--sec); font-size:12px; margin-left:6px; }
+/* places list, with a drag handle per row */
+.plist { margin-top:6px; }
+.prow { display:flex; align-items:center; gap:8px; padding:2px 0; }
+.prow.dragging { opacity:.5; }
+.grip { touch-action:none; cursor:grab; color:var(--sec); font-size:20px; line-height:1; padding:2px 6px; user-select:none; }
+.arrow { display:inline-block; color:var(--lo); }
+.pl { display:flex; align-items:center; gap:8px; cursor:pointer; font-size:14px; padding:3px 4px; }
+.pl .d { color:var(--sec); font-size:12px; }
+input[type=checkbox] { width:20px; height:20px; accent-color:var(--hi); cursor:pointer; margin:0; }
+.del { font-size:12px; padding:2px 8px; margin-left:6px; }   /* next to the place (JG) */
+.addrow { border-left:3px solid var(--hi); padding:4px 8px; margin:6px 0; }
+.ck { display:flex; align-items:center; gap:8px; cursor:pointer; font-size:14px; }
+.dist { color:var(--sec); font-size:12px; white-space:nowrap; }
+/* the table shown small at the top of Explainer and Options */
+.preview { border-bottom:1px dashed #888; margin:0 -10px 8px; pointer-events:none; overflow:hidden; }   /* clipped at the screen's edge (0.46) */   /* full size (JG: "invisibly small" at 60%) */
+/* Explainer key: a real sample box beside a few words */
+.key { display:grid; grid-template-columns:repeat(auto-fill, minmax(270px, 1fr)); gap:6px 18px; }
+.kitem { display:flex; align-items:center; gap:10px; }
+.kitem .sample { flex:0 0 auto; }
+.kitem .sample .t > div { border-color:#555; }
+.kitem .words { font-size:13px; line-height:1.25; }
+/* Options: each setting with a small live sample */
+.set { display:grid; grid-template-columns:150px auto 1fr; align-items:center; gap:4px 12px; margin:5px 0; }
+.set .lbl { color:var(--sec); font-size:13px; }
+.set .sample { justify-self:start; }
+@media (max-width:560px) { .set { grid-template-columns:110px 1fr; } .set > :nth-child(3) { grid-column:1 / -1; max-width:100%; overflow:hidden; } }   /* narrow screen: the sample under its setting (0.46) */
+.stars { display:inline-flex; gap:3px; vertical-align:middle; }
+.stars button { font-size:20px; line-height:1; padding:2px 7px; }
+.stars button.lit { color:var(--hi); border-color:var(--hi); }
+textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1px solid #fff; border-radius:8px; padding:4px 8px; font-family:inherit; font-size:14px; line-height:1.3; width:100%; max-width:560px; height:44px; box-sizing:border-box; resize:vertical; }
+/* Forecasting: bars of the typical miss by days ahead */
+.bars { display:grid; grid-template-columns:150px 1fr max-content; gap:5px 10px; align-items:center; max-width:900px; font-size:15px; }
+.bars .n .sec { font-weight:400; font-size:12px; }   /* what the number means, repeated on every bar */
+@media (max-width:560px) { .bars { grid-template-columns:96px 1fr minmax(0, 120px); } }
+.bars .b { height:20px; background:var(--hi); }
+.bars .b.cal { background:#888; }
+.bars .n { font-variant-numeric:tabular-nums; color:#fff; font-size:16px; font-weight:700; }
+/* rain skill: bars from a zero line, right = better than the calendar, left = worse */
+.rtr { position:relative; height:20px; }
+.rtr .z { position:absolute; left:33.3%; top:-3px; bottom:-3px; width:2px; background:#fff; }
+.rtr .v { position:absolute; top:3px; bottom:3px; }
+.rtr .v.any { background:var(--rain); }
+.rtr .v.real { background:#fff; opacity:.85; }
+.rtr .v.neg { background:repeating-linear-gradient(45deg, #888 0 4px, #000 4px 7px); }
+.facts div { margin:5px 0; }
+/* Climate */
+.ct { display:grid; grid-template-columns:110px repeat(5, minmax(110px, 1fr)); max-width:1180px; overflow-x:auto; }
+.ct > div { border-bottom:1px solid #333; padding:4px 6px; font-size:14px; font-variant-numeric:tabular-nums; }
+.ct .h { color:var(--sec); font-size:12px; }
+.warm { color:var(--hi); font-weight:700; }
+.cool { color:var(--lo); font-weight:700; }
+/* rain against normal: a track for 0 to 3 times normal, a white mark at normal, the blue fill to this period's rain */
+.rtrack { display:inline-block; position:relative; width:90px; height:10px; background:#333; vertical-align:middle; margin:0 6px; }
+.rtrack .fill { position:absolute; left:0; top:0; bottom:0; background:var(--rain); }
+.rtrack .norm { position:absolute; left:33.33%; top:-3px; bottom:-3px; width:2px; background:#fff; }
+.rtrack .more { position:absolute; right:-10px; top:-4px; color:var(--rain); font-size:11px; }
+.ckey { display:flex; align-items:center; gap:4px; font-size:12px; color:var(--sec); margin:4px 0 8px; }
+
+/* 0.48: finger-sized controls on touch screens (JG: "Phones only"); with a mouse, as compact as before. The page is marked
+   "touch" when the browser reports a finger as the main pointer (pointer: coarse), or by ?touch=1 (?touch=0 forces the mouse
+   size), so the phone views page can show both. Apple asks for 44 x 44 points, Google 48 x 48; text in fields at 16 px or
+   more, so Safari on an iPhone does not zoom the page when one is tapped. */
+.touch button, .touch select { min-height:44px; min-width:44px; }
+.touch input[type=text], .touch input[type=search] { min-height:44px; box-sizing:border-box; }
+.touch select, .touch input[type=text], .touch input[type=search], .touch textarea, .touch .pane select { font-size:16px; }
+.touch input[type=checkbox] { width:24px; height:24px; }
+.touch .ck, .touch .pl { min-height:44px; }
+.touch .pane a { display:inline-block; padding:12px 0; }
+.brk { display:none; }   /* on a narrow touch screen the top row breaks after the choosers: two lines, not three */
+.touch .strip button { padding:2px 6px; }
+@media (max-width:560px) { .touch .brk { display:block; flex-basis:100%; height:0; } }
+</style></head><body>
+<div class="strip" id="strip">
+  <span class="brand" id="brand"></span>
+  <button data-tab="locs">Locations</button>
+  <button data-tab="table">Table</button>
+  <select id="layout" aria-label="Layout"></select>
+  <select id="ndays" aria-label="Days ahead"></select>
+  <span class="brk"></span>
+  <button data-tab="expl">Explainer</button>
+  <button data-tab="fcst">Forecasting</button>
+  <button data-tab="clim">Climate</button>
+  <button data-tab="opts">Options</button>
+  <button data-tab="about">About</button>
+</div>
+
+<div id="pLocs" class="pane" hidden>
+  <h2>Add a location</h2>
+  <div class="row2">
+    <input type="search" id="q" placeholder="Search: town, state (e.g. Moab, UT)" autocomplete="off" aria-label="Search for a town">
+    <button class="btn" id="gps">Use GPS</button>
+  </div>
+  <div class="hits" id="hits"></div>
+  <div class="row2">
+    <input type="text" id="paste" placeholder="Paste a position (latitude, longitude)" autocomplete="off" aria-label="Paste a position">
+    <button class="info" id="pinfo" title="Paste the latitude and longitude of a place, copied from Google Maps, a GPS app or a website. Examples: 35.084, -106.651 | 35.084 N 106.651 W | 35°05'02&quot;N 106°39'04&quot;W | a Google Maps link with @35.084,-106.651">i</button>
+  </div>
+  <div class="help" id="phelp" hidden>Paste the latitude and longitude of a place, copied from Google Maps (press and hold the spot, then copy the numbers), a GPS app, or a website. Any of these work: <b>35.084, -106.651</b> · <b>35.084 N 106.651 W</b> · <b>35°05'02"N 106°39'04"W</b> · a Google Maps link containing <b>@35.084,-106.651</b>. West longitudes are negative.</div>
+  <div class="addrow" id="addrow" hidden>
+    <div class="row2"><input type="text" id="aname" aria-label="Name for the new location"><button class="btn" id="aadd">Add</button><button class="btn" id="acancel">Cancel</button></div>
+    <div class="sec" id="awhere"></div>
+  </div>
+  <div class="sec" id="pmsg"></div>
+  <h2>Locations</h2>
+  <div class="row2"><button class="btn" id="nearme">Near me</button><span class="sec" id="nearmsg"></span></div>
+  <div class="sec">Checked places are in the table. Drag ≡ to change the order.</div>
+  <div class="row2"><label class="ck"><input type="checkbox" id="twu">Weather Underground links</label><span class="sec">WU ↗ beside each place: its 10-day forecast</span></div>
+  <div class="plist" id="plist"></div>
+  <h2>Saved sets</h2>
+  <div class="sec">Stored on this device, in this browser only.</div>   <!-- JG: "add a note that these are stored on your device" -->
+  <div class="row2"><input type="text" id="sname" placeholder="Set name" aria-label="Set name"><input type="text" id="sdesc" placeholder="Description" aria-label="Set description"><button class="btn" id="ssave">Save set</button></div>
+  <div id="slist"></div>
+</div>
+
+<div id="pTable"><div class="ft" id="ft"></div><div class="tw" id="tw"><div class="t" id="t"></div></div></div>
+
+<div id="pExpl" class="pane" hidden>
+  <div class="preview" id="xpreview"></div>
+  <div class="ckey" id="xunits"></div>
+  <div class="key" id="key"></div>
+  <div class="sec" id="src" style="margin-top:10px"></div>
+</div>
+
+<div id="pFcst" class="pane" hidden>
+  <div class="ckey" id="funits"></div>
+  <h2>How much to trust each forecast day</h2>
+  <div class="sec">Typical miss of the day's high, by days ahead (US forecasts, 2016)</div>
+  <div class="bars" id="bars"></div>
+  <h2>Is the precip forecast better than the usual odds for the date?</h2>
+  <div class="sec">The usual odds: how often there was precip on that date in past years, with no forecast at all. A bar to the right of the white line: the forecast does better than the usual odds; at the line, no better; to the left (striped), worse. NOAA's forecasts of precip in a day, across the US, scored for 2025.</div>
+  <div class="bars" id="rbars"></div>
+  <div class="facts" id="facts"></div>
+  <div class="sec" id="fsrc"></div>
+</div>
+
+<div id="pClim" class="pane" hidden>
+  <h2>Recent weather against the average for the same dates</h2>
+  <div class="sec" id="cnote"></div>
+  <div class="ct" id="ct"></div>
+</div>
+
+<div id="pOpts" class="pane" hidden>
+  <div class="sec">Settings for the table. Settings for another tab are on that tab.</div>
+  <div class="preview" id="opreview"></div>
+  <div id="sets"></div>
+  <h2>Profiles</h2>
+  <div class="sec">A profile keeps every setting, from every tab: the places, these table settings, the Climate columns, the units and the Weather Underground links. Stored on this device, in this browser only.</div>
+  <div class="row2"><input type="text" id="pname" placeholder="Profile name" aria-label="Profile name"><button class="btn" id="psave">Save Profile</button></div>
+  <div id="plistp"></div>
+  <div id="rateSec" hidden>   <!-- hidden for now (JG, 2026-10-30) -->
+  <h2>Your rating of <span id="lname"></span></h2>
+  <span class="stars" id="stars"></span>
+  <textarea id="comment" placeholder="Comment on this layout"></textarea>
+  <div class="row2" style="margin-top:6px"><input type="text" id="rname" placeholder="Your name (optional)" aria-label="Your name, optional"></div>
+  <div class="sec">Ratings and comments are collected without your name unless you add it. In this prototype they stay on this device.</div>
+  <div class="sec" id="stamp"></div>
+  <div class="sec" id="all"></div>
+  </div>
+</div>
+<div id="pAbout" class="pane" hidden>
+  <h2 id="aboutName"></h2>
+  <div style="max-width:640px">Remember those weather tables in the back of the newspaper, which show weather by cities? Now you can create your own for your favorite places. Where next on the road? Track your options with fast visual scanning of trends and comparisons. See what just changed, and when the next forecast is expected.</div>
+  <h2>Feedback</h2>
+  <div style="max-width:640px">Your feedback, comments, and questions are welcome! We would love to hear how you used WxTable in your journeys.<br><a href="mailto:support@rydnsoftware.com">support@rydnsoftware.com</a></div>
+  <h2>Website with more great apps for the road, and other uses too</h2>
+  <div><a href="https://rydnsoftware.com" target="_blank" rel="noopener">https://rydnsoftware.com</a></div>
+  <h2>Data</h2>
+  <div class="sec" style="font-size:13px;max-width:640px">Forecasts and past days: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Weather data by Open-Meteo.com</a> (free for non-commercial use, with credit). Weather Service alerts: National Weather Service, api.weather.gov (public domain). The usual weather for each date, and the Climate tab: Open-Meteo Historical Weather API, 1991–2020. Forecast accuracy (Forecasting tab): WxTable's own research, research\WxForecastResearch_v04.md, 2026-10-24.</div>
+  <h2>This device</h2>   <!-- at the end of About (JG, 2026-10-30) -->
+  <div class="sec" style="font-size:13px;max-width:640px">What this browser reports about the device, and what the page can measure. WxTable adapts to the measured things (size, touch, settings), not to the device's name. It updates when you turn the device or change the window.</div>
+  <div id="devPic" class="devpic"></div>
+  <div id="dev" class="dev"></div>
+</div>
+<div id="ab"></div>
+
+<script src="data/wx_prev_t_2026-10-23.js"></script>
+<script>window.WXP = window.WXT;   // the previous copy, for "changed since"</script>
+<script src="data/wx_snapshot_t_2026-10-29.js"></script>
+<script src="data/wx_alerts_t_2026-10-29.js"></script>
+<script src="data/wx_climate_t12_2026-10-30.js"></script>   <!-- 7, 30, 90 days, 6 and 12 months -->
+<script src="data/wx_normals_t_2026-10-29.js"></script>
+<script src="data/wx_runs_2026-10-29.js"></script>
+<script src="wxt_alerts_v03.js"></script>
+<script>
+// 0.5 s yellow press-flash on every button (house style)
+document.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; b.classList.add('flash'); setTimeout(() => b.classList.remove('flash'), 500); }, true);
+
+const RAIN_MIN = 20, GUST_MIN = 15, GUST_LIMIT = 25, CHG_T = 3, CHG_P = 20;
+const RAIN_FULL = 80, GUST_FULL = 35, GRAY_MIN = 35, GRAY_MAX = 100;
+const WK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const W = window.WXT, $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const cl = x => Math.max(0, Math.min(1, x));
+const addDay = (iso, n) => { const [y, m, d] = iso.split('-').map(Number); return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10); };
+const pad = n => String(n).padStart(2, '0');
+function when(ms) { const d = new Date(ms), h = d.getHours(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${h % 12 || 12}:${pad(d.getMinutes())} ${h < 12 ? 'AM' : 'PM'}`; }
+const TODAY = W.fetched.slice(0, 10), ALL = W.places[0].days.map(d => d[0]), TI = ALL.indexOf(TODAY);
+W.places.forEach(p => { p.byDay = Object.fromEntries(p.days.map(r => [r[0], r])); });
+const NODAY = [null, null, null, 0, null, 0];   // a day an added place's copy does not cover: an empty box
+const PREV = {}; ((window.WXP && window.WXP.places) || []).forEach(p => { PREV[p.name] = Object.fromEntries(p.days.map(r => [r[0], r])); });
+const CLIM = {}; ((window.WXC && window.WXC.places) || []).forEach(p => { CLIM[p.name] = p; });
+
+// remembered on this device only (same store as 0.10-0.12, so ratings and choices carry over)
+const KEY = 'wxtable_proto_v1';
+// 0.48: "touch" when a finger is the main pointer, or forced by ?touch=1 / ?touch=0 (the phone views page)
+const TOUCH_MQ = matchMedia('(pointer: coarse)'), TOUCH_FORCE = /[?&]touch=1\b/.test(location.search) ? true : /[?&]touch=0\b/.test(location.search) ? false : null;
+const setTouch = () => document.documentElement.classList.toggle('touch', TOUCH_FORCE == null ? TOUCH_MQ.matches : TOUCH_FORCE);
+setTouch(); TOUCH_MQ.addEventListener('change', () => { setTouch(); refresh(); });
+let S = { layout: '0.09', lines: 'g88', which: 'both',   // JG: "Default is rows and columns, light gray"
+ tab: 'table', rainshow: 'both', units: 'F', amt: 'in', changes: true, wu: false,
+  ahead: '', rainMin: 20, amtMin: 0, e: null, ft: '2', cwin: null, places: null, profiles: [], sets: [], raterName: '', ratings: {} };
+try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s && typeof s === 'object') S = Object.assign(S, s, { ratings: Object.assign({}, s.ratings) }); } catch (e) { /* storage blocked: defaults */ }
+if (!S.rain020) { if (S.rainshow === 'chance') S.rainshow = 'both'; S.rain020 = true; }   // once: the old default to the new
+delete S.myLoc;   // 0.13's "My location" is gone (JG: "it's NOT my location - it's any location")
+let saveOk = true;
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); saveOk = true; } catch (e) { saveOk = false; } }
+// the list: the copy's places (by name) and places added on the page (each carrying its own copy, fetched when added)
+const placeOk = x => x && x.name && (x.wx ? Array.isArray(x.wx.days) : W.places.some(p => p.name === x.name));
+if (Array.isArray(S.places)) S.places = S.places.filter(placeOk);   // drop only an entry that no longer makes sense
+if (!Array.isArray(S.places) || !S.places.length) S.places = W.places.map((p, i) => ({ name: p.name, on: i < 6 }));
+S.places = S.places.filter(x => !x.del);   // a deletion not undone before the page was closed is final
+if (Array.isArray(S.sets)) S.sets = S.sets.filter(x => !x.del);
+if (!Array.isArray(S.profiles)) S.profiles = [];
+if (!Array.isArray(S.sets)) S.sets = [];
+const ADDED = {};   // name -> the added place in the same shape as the copy's places (built from its saved copy)
+function placeOf(n) {
+  const x = S.places.find(y => y.name === n) || {};
+  if (!x.wx) return W.places.find(p => p.name === n) || null;
+  if (!ADDED[n] || ADDED[n].src !== x.wx) {
+    ADDED[n] = { name: x.name, note: x.note || '', lat: x.lat, lon: x.lon, elevFt: x.wx.elevFt, days: x.wx.days, hours: x.wx.hours, src: x.wx,
+      byDay: Object.fromEntries(x.wx.days.map(r => [r[0], r])) };
+  }
+  return ADDED[n];
+}
+// wide change arrows, drawn so they do not depend on the font (JG: "they need to be \"fat\" arrows"; "fat = wide arrows")
+const FAT = { up: '<svg class="fat" viewBox="0 0 14 12" width="12" height="10"><path d="M7 0 L14 7 H10 V12 H4 V7 H0 Z"/></svg>',
+  dn: '<svg class="fat" viewBox="0 0 14 12" width="12" height="10"><path d="M7 12 L14 5 H10 V0 H4 V5 H0 Z"/></svg>' };
+const chosen = () => S.places.filter(x => x.on && !x.del).map(x => placeOf(x.name)).filter(Boolean);
+// added places' alerts and climate join the copies', so the triangles and the Climate tab see them
+function joinAdded() {
+  const A = window.WXA.places = window.WXA.places.filter(p => !p.added);
+  S.places.forEach(x => { if (x.wx) { A.push({ name: x.name, alerts: x.alerts || [], offset: x.wx.offset, added: true }); if (x.clim) CLIM[x.name] = x.clim; } });
+}
+
+// units
+const T = f => f == null ? '' : S.units === 'C' ? Math.round((f - 32) * 5 / 9) : f;
+const dT = d => S.units === 'C' ? d * 5 / 9 : d;          // a difference in degrees
+const U = () => S.units === 'C' ? '°C' : '°F';
+// rain, gusts, gray, change marks
+const MM = () => S.amt === 'mm';   // precip amounts in millimeters (JG: "Units should include metric rain / snow amounts")
+const AU = () => MM() ? 'mm' : 'in';
+const inch = q => { if (MM()) return String(Math.round(q * 25.4));   // whole mm; inches in the 0.1 format (JG)
+  const v = Math.round(q * 10) / 10; return v ? v.toFixed(1) : '0'; };
+const amtTxt = (q, dp) => MM() ? `${(q * 25.4).toFixed(Math.max(0, dp - 1))} mm` : `${q.toFixed(dp)} in`;   // totals and limits
+function rainTxt(pp, q, mode) { const a = q == null ? null : inch(q); return mode === 'amount' && a ? a : mode === 'both' && a ? `${pp}%\u00a0\u00a0${a}` : `${pp}%`; }
+// when rain shows (JG: "Precip amount should be settable"): a chance of at least rMin(), and an amount of at least aMin()
+// where the copy has an amount (the day/night halves of 0.07 have none, so there only the chance counts)
+const rMin = () => +S.rainMin || RAIN_MIN, aMin = () => +S.amtMin || 0;
+const wetShown = (pp, q) => pp >= rMin() && (q == null || q >= aMin());
+const fell = q => q != null && q >= Math.max(0.05, aMin());   // a past day: precip that fell, not a chance
+const pastRain = q => fell(q) ? `<span class="r${q >= 0.25 ? ' big' : ''}">${inch(q)}<small> ${AU()}</small></span>` : '';
+const rain = (pp, q, extra = '') => wetShown(pp, q) ? `<span class="r${pp >= 50 ? ' big' : ''}">${rainTxt(pp, q, S.rainshow)}${extra}</span>` : '';
+const rainUnit = () => S.rainshow === 'chance' ? '%' : S.rainshow === 'amount' ? AU() : `% ${AU()}`;   // units only (R20)
+const gust = g => g >= GUST_MIN ? `<span class="w${g >= GUST_LIMIT ? ' over' : ''}">${g}</span>` : '';
+function gray(pp, g, q, past) {
+  const wetOn = past ? fell(q) : wetShown(pp, q);
+  if (!wetOn && g < GUST_MIN) return 0;
+  const wet = !wetOn ? 0 : past ? cl(q / 0.5) : cl((pp - rMin()) / Math.max(1, RAIN_FULL - rMin())), windy = g >= GUST_MIN ? cl((g - GUST_MIN) / (GUST_FULL - GUST_MIN)) : 0;
+  return Math.round(GRAY_MIN + (GRAY_MAX - GRAY_MIN) * (2 * wet + windy) / 3);
+}
+function chgHi(p, iso, hi) {
+  if (hi == null) return '';
+  const o = S.changes && iso >= TODAY && PREV[p.name] && PREV[p.name][iso]; if (!o || o[1] == null) return '';
+  const d = hi - o[1]; return Math.abs(d) >= CHG_T ? `<span class="chg" title="high was ${T(o[1])}${U()} in the previous copy">${FAT[d > 0 ? 'up' : 'dn']}</span>` : '';
+}
+function chgRain(p, iso, pp) {
+  if (pp == null) return '';
+  const o = S.changes && iso >= TODAY && PREV[p.name] && PREV[p.name][iso]; if (!o || o[3] == null) return '';
+  const d = pp - o[3]; return Math.abs(d) >= CHG_P ? `<span class="chg" title="precip chance was ${o[3]}% in the previous copy">${FAT[d > 0 ? 'up' : 'dn']}</span>` : '';
+}
+function heads(days) {
+  return days.map(iso => { const [y, m, d] = iso.split('-').map(Number), wd = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+    return `<div class="hd${iso === TODAY ? ' today' : iso < TODAY ? ' past' : wd === 0 || wd === 6 ? ' we' : ''}">${WK[wd]} ${d}</div>`; }).join('');
+}
+const name2 = p => `<div class="nm"><b>${esc(p.name)}</b><span>${p.note ? esc(p.note) + ' · ' : ''}${p.elevFt.toLocaleString()} ft</span></div>`;
+const at = (p, from, to) => `data-p="${esc(p.name)}" data-from="${from}" data-to="${to}"`;
+const dcls = iso => (iso === TODAY ? ' todaycol' : '') + (iso < TODAY ? ' past' : '');
+const dayAt = (p, iso) => at(p, iso + 'T00:00', addDay(iso, 1) + 'T00:00');
+
+const LAYOUTS = {
+  '0.05': { what: 'high and low', minRh: 36, nameW: 78, cw: 79, line: '#333',
+    corner: () => `${U()} · ${rainUnit()} · mph`,
+    box: (p, iso) => { const [, hi, lo, pp, q, g] = p.byDay[iso] || NODAY;
+      return `<div class="c${dcls(iso)}" ${dayAt(p, iso)}><span class="hi">${T(hi)}${chgHi(p, iso, hi)}</span><span class="lo">${T(lo)}</span><div class="l2"><span>${iso < TODAY ? pastRain(q) : rain(pp, q, chgRain(p, iso, pp))}</span><span>${gust(g)}</span></div></div>`; },
+    name: name2 },
+  '0.07': { what: 'day and night', minRh: 36, nameW: 78, cw: 56, line: '#333', days: 7, halves: true,
+    corner: () => `${U()} · ${rainUnit()} · mph`,
+    box(p, iso) {
+      function half(start, end, max) {
+        const hs = p.hours.filter(([t]) => t >= start && t < end);
+        const Tt = hs.map(x => x[1]).filter(v => v != null), pp = hs.map(x => x[2]).filter(v => v != null), g = hs.map(x => x[3]).filter(v => v != null), qs = hs.map(x => x[4]).filter(v => v != null);
+        return Tt.length ? { t: max ? Math.max(...Tt) : Math.min(...Tt), pp: pp.length ? Math.max(...pp) : 0, g: g.length ? Math.max(...g) : 0, q: qs.length ? Math.round(qs.reduce((a, b) => a + b, 0) * 100) / 100 : null } : null;
+      }
+      const one = (x, cls, tcls, a, past) => x ? `<div class="c ${cls}" ${a}><span class="${tcls}">${T(x.t)}</span><div class="l2"><span>${past ? pastRain(x.q) : rain(x.pp, x.q)}</span><span>${gust(x.g)}</span></div></div>` : `<div class="c ${cls}" ${a}></div>`;
+      const nx = addDay(iso, 1);
+      return one(half(iso + 'T06:00', iso + 'T18:00', true), 'd' + dcls(iso), 'hi', at(p, iso + 'T06:00', iso + 'T18:00'), iso < TODAY)
+           + one(half(iso + 'T18:00', nx + 'T06:00', false), 'n' + (iso < TODAY ? ' past' : ''), 'lo', at(p, iso + 'T18:00', nx + 'T06:00'), iso < TODAY);
+    }, name: name2 },
+  '0.08': { what: 'one line, highs only', minRh: 22, nameW: 96, cw: 77, line: '#333',
+    corner: () => `high ${U()} · ${rainUnit()} · mph`,
+    box: (p, iso) => { const [, hi, lo, pp, q, g] = p.byDay[iso] || NODAY;
+      return `<div class="c one${dcls(iso)}" ${dayAt(p, iso)} title="low ${T(lo)}${U()}"><span class="hi">${T(hi)}${chgHi(p, iso, hi)}</span>${iso < TODAY ? pastRain(q) : rain(pp, q, chgRain(p, iso, pp))}${gust(g)}</div>`; },
+    name: p => `<div class="nm" title="${esc(p.name)} · ${p.elevFt.toLocaleString()} ft">${esc(p.name)}</div>` },
+  '0.09': { what: 'gray = precip, wind', minRh: 36, nameW: 78, cw: 79, line: '#222',
+    corner: () => `${U()} · ${rainUnit()} · mph`,
+    box: (p, iso) => { const [, hi, lo, pp, q, g] = p.byDay[iso] || NODAY, L = gray(pp, g, q, iso < TODAY);
+      return `<div class="c${dcls(iso)}" ${dayAt(p, iso)} style="background:rgb(${L},${L},${L})"><span class="hi">${T(hi)}${chgHi(p, iso, hi)}</span><span class="lo">${T(lo)}</span><div class="l2"><span>${iso < TODAY ? pastRain(q) : rain(pp, q, chgRain(p, iso, pp))}</span><span>${gust(g)}</span></div></div>`; },
+    name: name2 },
+  'EB': { what: 'Basic graphics', minRh: 44, nameW: 78, cw: 79, line: '#333',
+    corner: () => `${U()} · ${rainUnit()} · mph`,
+    box: (p, iso) => { const [, hi, lo, pp, q, g] = p.byDay[iso] || NODAY, k = SKY(codeOf(p, iso));
+      return `<div class="c eb${dcls(iso)}" ${dayAt(p, iso)} title="${k ? SKYWORD[k] : ''}"><div class="ebtop">${k ? skySvg(k) : '<span class="sky"></span>'}<span class="ebt"><span class="hi">${T(hi)}${chgHi(p, iso, hi)}</span><span class="lo">${T(lo)}</span></span></div><div class="l2"><span>${iso < TODAY ? pastRain(q) : rain(pp, q, chgRain(p, iso, pp))}</span><span>${gust(g)}</span></div></div>`; },
+    name: name2 },
+  'E': { what: 'Advanced graphics', minRh: 54, nameW: 78, cw: 79, line: '#333',
+    corner: () => `bars ${U()} · in · mph`,
+    box: (p, iso) => { const d = eData(p, iso); d.best = ETMP.best[p.name] === iso; d.rowMax = ETMP.rowMax ? ETMP.rowMax[p.name] : null;
+      return `<div class="c g${dcls(iso)}" ${dayAt(p, iso)} title="${esc(eTitle(p, iso, d))}">${eSvg(d, ETMP.scale)}</div>`; },
+    name: name2 },
+};
+const ORDER = ['0.05', '0.07', '0.08', '0.09', 'EB', 'E'];
+// ---------- E Basic graphics: the usual sky symbols (JG: "Add E Basic graphics and use typical sun/cloud graphics").
+// The day's sky is Open-Meteo's daily weather code (WMO): row index 6 of the forecast copy; window.WXCODE only if a page loads one.
+const codeOf = (p, iso) => { const r = p.byDay[iso]; if (r && r[6] != null) return r[6]; const c = window.WXCODE && WXCODE.places[p.name]; return c ? c[iso] : null; };
+const SKY = c => c == null ? null : c === 0 ? 'sun' : c <= 2 ? 'part' : c === 3 ? 'cloud' : c <= 48 ? 'fog' : c <= 57 ? 'drizzle' : c <= 67 ? 'rain' : c <= 77 ? 'snow' : c <= 82 ? 'showers' : c <= 86 ? 'snow' : 'thunder';
+const SKYWORD = { sun: 'Sunny', part: 'Partly cloudy', cloud: 'Cloudy', fog: 'Fog', drizzle: 'Drizzle', rain: 'Rain', showers: 'Showers', snow: 'Snow', thunder: 'Thunderstorms' };
+function skySvg(kind) {   // 30 x 24 units; yellow sun, gray cloud, blue rain, white snow, yellow bolt
+  const sun = (cx, cy, r) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#FFD700"/>` + [0, 45, 90, 135, 180, 225, 270, 315].map(a => {
+    const t = a * Math.PI / 180, x1 = cx + Math.cos(t) * (r + 1.5), y1 = cy + Math.sin(t) * (r + 1.5), x2 = cx + Math.cos(t) * (r + 4), y2 = cy + Math.sin(t) * (r + 4);
+    return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#FFD700" stroke-width="1.6" stroke-linecap="round"/>`; }).join('');
+  const cloud = (dx, dy, fill) => `<g transform="translate(${dx},${dy})" fill="${fill}"><circle cx="11" cy="12" r="4.5"/><circle cx="16.5" cy="9.5" r="5.5"/><circle cx="21.5" cy="12.5" r="4"/><rect x="7" y="12" width="18" height="5" rx="2.5"/></g>`;
+  const drops = (n, len) => Array.from({ length: n }, (_, i) => `<line x1="${11 + i * 5}" y1="19" x2="${9.5 + i * 5}" y2="${19 + len}" stroke="#6CB8FF" stroke-width="1.6" stroke-linecap="round"/>`).join('');
+  let g = '';
+  if (kind === 'sun') g = sun(15, 12, 5.5);
+  else if (kind === 'part') g = sun(10, 9, 4.5) + cloud(2, 4, '#c3cbd4');
+  else if (kind === 'cloud') g = cloud(-1, 1, '#c3cbd4');
+  else if (kind === 'fog') g = [8, 12, 16, 20].map((y, i) => `<line x1="${5 + (i % 2) * 2}" y1="${y}" x2="${25 - (i % 2) * 2}" y2="${y}" stroke="#aab3bd" stroke-width="2" stroke-linecap="round"/>`).join('');
+  else if (kind === 'drizzle') g = cloud(-1, -2, '#aab3bd') + drops(3, 2);
+  else if (kind === 'rain') g = cloud(-1, -2, '#8f99a4') + drops(3, 4);
+  else if (kind === 'showers') g = sun(9, 7, 3.5) + cloud(1, -1, '#aab3bd') + drops(2, 4);
+  else if (kind === 'snow') g = cloud(-1, -2, '#aab3bd') + [11, 16, 21].map(x => `<text x="${x - 2.5}" y="23.5" font-size="7" fill="#fff">✱</text>`).join('');
+  else if (kind === 'thunder') g = cloud(-1, -2, '#7d8792') + '<polygon points="15,15 11,21 14.5,21 12.5,24.5 19,18 15.5,18 17.5,15" fill="#FFD700"/>';
+  return `<svg class="sky" viewBox="0 0 30 24" width="30" height="24" aria-label="${SKYWORD[kind] || ''}">${g}</svg>`;
+}
+
+
+// ---------- layout E: graphics in place of numbers (JG: "What are your ideas for weather graphics that are better than the
+// standard ones?", then "Show me mockups"). Each part can be switched off under Options. Numbers are in each box's tooltip.
+const MISS = [3.1, 3.1, 3.5, 3.9, 4.4, 5.1, 5.7, 6.6];   // typical miss of the high (°F) by days ahead, 0 = today (2016 data, research S17)
+const missAt = lead => MISS[Math.min(lead, MISS.length - 1)];   // beyond day 7: held at day 7's, a floor, not a measurement
+// JG's choices as the defaults ("Save my current checkboxes as the defaults", 2026-10-29, read from his browser at 2:02 PM)
+const EDEF = { bar: true, maxline: true, precip: true, gust: true, usual: false, comfort: false, fuzz: false, prev: false, hours: true, best: false, nums: true, comfLo: 65, comfHi: 80 };
+const EO = () => Object.assign({}, EDEF, S.e || {});
+const usualOf = (p, iso) => { const n = window.WXN && WXN.places[p.name]; return n ? n[iso.slice(5)] : null; };
+const leadOf = iso => Math.round((Date.parse(iso) - Date.parse(TODAY)) / 864e5);
+function dayScore(hi, pp, g) {   // the best-day rule for now (Claude's, not JG's): temperature 3, dry 2, calm 1
+  const o = EO(), t = hi < o.comfLo ? cl((hi - (o.comfLo - 25)) / 25) : hi > o.comfHi ? cl(((o.comfHi + 15) - hi) / 15) : 1;
+  return (3 * t + 2 * (1 - pp / 100) + cl((35 - g) / 25)) / 6;
+}
+// one E box as an SVG, 79 x 56 units: temperature at the left, precip column, gust line, hours strip along the bottom
+function eSvg(d, sc) {
+  const o = EO(), H = 44, top = 4, y = t => top + (sc.hi - t) / (sc.hi - sc.lo) * H, cy = v => Math.max(top, Math.min(top + H, y(v)));
+  let g = '';
+  // a faint line at this row's highest temperature, the same height across the row, to compare each bar against
+  const rowMax = d.rowMax != null ? d.rowMax : sc.max;
+  if (o.maxline && rowMax != null) g += `<line x1="0" x2="79" y1="${cy(rowMax)}" y2="${cy(rowMax)}" stroke="#8a8f98" stroke-width="0.8" opacity=".7"/>`;
+  // the comfortable band only where it falls inside this table's scale (above or below it, it would be an empty box)
+  if (o.comfort && o.comfHi > sc.lo && o.comfLo < sc.hi) g += `<rect x="3" y="${cy(o.comfHi)}" width="38" height="${Math.max(0, cy(o.comfLo) - cy(o.comfHi))}" fill="rgba(255,215,0,.13)"/>`;
+  if (o.usual && d.nhi != null) g += `<rect x="8" y="${cy(d.nhi)}" width="28" height="${Math.max(1, cy(d.nlo) - cy(d.nhi))}" fill="#3a3f48"/>`;
+  if (o.bar && d.hi != null) {
+    if (o.fuzz && !d.past && d.miss) {
+      g += `<rect x="14" y="${cy(d.hi + d.miss)}" width="16" height="${Math.max(0, cy(d.hi) - cy(d.hi + d.miss))}" fill="#ddd" opacity=".28"/>`;
+      g += `<rect x="14" y="${cy(d.lo)}" width="16" height="${Math.max(0, cy(d.lo - d.miss) - cy(d.lo))}" fill="#ddd" opacity=".28"/>`;
+    }
+    g += `<rect x="14" y="${cy(d.hi)}" width="16" height="${Math.max(2, cy(d.lo) - cy(d.hi))}" fill="#ddd"/>`;
+    g += `<rect x="13" y="${cy(d.hi) - 1}" width="18" height="3" fill="#FFD700"/><rect x="13" y="${cy(d.lo) - 2}" width="18" height="3" fill="#8CEBFF"/>`;
+    if (o.prev && d.prevHi != null && Math.abs(d.prevHi - d.hi) >= 1) g += `<line x1="6" x2="38" y1="${cy(d.prevHi)}" y2="${cy(d.prevHi)}" stroke="#8CEBFF" stroke-width="1.4" stroke-dasharray="2.5 1.5"/>`;
+    if (o.nums) g += `<text x="32" y="${cy(d.hi) + 3}" font-size="9" fill="#FFD700" font-weight="700">${T(d.hi)}</text><text x="32" y="${cy(d.lo) + 3}" font-size="9" fill="#8CEBFF">${T(d.lo)}</text>`;
+  }
+  // precip: height = amount (1 in fills it), solidness = chance (past days solid: it fell)
+  const wet = o.precip && (d.past ? fell(d.q) : wetShown(d.pp, d.q));
+  if (wet) {
+    const h = Math.max(2, Math.min(d.q || 0, 1) * H), op = d.past ? 1 : 0.3 + 0.7 * d.pp / 100;
+    g += `<rect x="45" y="${top + H - h}" width="12" height="${h}" fill="#6CB8FF" opacity="${op.toFixed(2)}"/>`;
+  }
+  if (o.gust && d.g >= GUST_MIN) { const len = Math.max(4, cl((d.g - GUST_MIN) / (GUST_FULL - GUST_MIN)) * 40);
+    g += `<line x1="66" x2="66" y1="${top + H}" y2="${top + H - len}" stroke="${d.g >= GUST_LIMIT ? '#FFD700' : '#fff'}" stroke-width="3"/>`; }
+  if (o.hours && d.hrs && d.hrs.length) {   // 24 ticks: when in the day the precip is expected (or fell)
+    const w = 79 / 24;
+    d.hrs.forEach((h, i) => { const on = d.past ? (h[4] || 0) >= 0.01 : (h[2] || 0) >= rMin(); if (on) g += `<rect x="${(i * w).toFixed(1)}" y="51" width="${(w - 0.6).toFixed(1)}" height="4" fill="#6CB8FF" opacity="${d.past ? 1 : (0.3 + 0.7 * (h[2] || 0) / 100).toFixed(2)}"/>`; });
+  }
+  if (o.best && d.best) g += `<rect x="2" y="2" width="6" height="6" fill="#FFD700"/>`;
+  return `<svg viewBox="0 0 79 56" width="100%" height="100%" preserveAspectRatio="none" aria-hidden="true">${g}</svg>`;
+}
+function eData(p, iso) {
+  const [, hi, lo, pp, q, g] = p.byDay[iso] || NODAY, n = usualOf(p, iso), pr = PREV[p.name] && PREV[p.name][iso];
+  return { hi, lo, pp, q, g, past: iso < TODAY, nhi: n ? n[0] : null, nlo: n ? n[1] : null, prevHi: S.changes && iso >= TODAY && pr ? pr[1] : null,
+    miss: iso >= TODAY ? missAt(leadOf(iso)) : 0, hrs: (p.hours || []).filter(h => h[0].slice(0, 10) === iso) };
+}
+let ESCALE = { lo: 30, hi: 90 };
+function eScale(P, ds) {   // one temperature scale for the whole table, so bars compare across places and days
+  let lo = 1e9, hi = -1e9;
+  P.forEach(p => ds.forEach(iso => { const d = eData(p, iso); [d.hi, d.lo, d.nhi, d.nlo].forEach(v => { if (v != null) { lo = Math.min(lo, v); hi = Math.max(hi, v); } }); }));
+  if (lo > hi) return { lo: 30, hi: 90 };
+  let max = null; P.forEach(p => ds.forEach(iso => { const h = (p.byDay[iso] || NODAY)[1]; if (h != null && (max == null || h > max)) max = h; }));
+  return { lo: Math.floor(lo - 2), hi: Math.ceil(hi + 6), max };   // room above the warmest high, so its line stands clear of the row's top edge
+}
+function eBest(P, ds) {   // each place's best day ahead, by dayScore
+  const best = {};
+  P.forEach(p => { let bi = null, bs = -1; ds.filter(iso => iso >= TODAY).forEach(iso => { const [, hi, , pp, , g] = p.byDay[iso] || NODAY; if (hi == null) return; const sc = dayScore(hi, pp, g); if (sc > bs) { bs = sc; bi = iso; } }); best[p.name] = bi; });
+  return best;
+}
+function eTitle(p, iso, d) {
+  const n = d.nhi != null ? `; usual ${T(Math.round(d.nhi))}/${T(Math.round(d.nlo))}${U()}` : '';
+  const pr = d.past ? (d.q != null ? `; precip that fell ${inch(d.q)} ${AU()}` : '') : `; precip ${d.pp}%${d.q != null ? ' ' + inch(d.q) + ' ' + AU() : ''}`;
+  return `${p.name} ${iso}: high ${T(d.hi)}, low ${T(d.lo)}${U()}${n}${pr}; gusts ${d.g} mph`;
+}
+let ETMP = { scale: { lo: 30, hi: 90 }, best: {} };
+const LETTER = { '0.05': 'A', '0.07': 'B', '0.08': 'C', '0.09': 'D', 'EB': 'E', 'E': 'F' };   // 'E' (key) is F Advanced since 0.35   // the names JG sees; the keys stay, so ratings carry over
+const NAME = v => `${LETTER[v]} ${LAYOUTS[v].what}`;
+const LINES = [{ k: 'built', name: 'As built', c: '' }, { k: 'none', name: 'None', c: 'transparent' }, { k: 'black', name: 'Black', c: '#000' },
+  { k: 'g22', name: 'Dark gray', c: '#222' }, { k: 'g33', name: 'Gray', c: '#333' }, { k: 'g55', name: 'Mid gray', c: '#555' },
+  { k: 'g88', name: 'Light gray', c: '#888' }, { k: 'white', name: 'White', c: '#fff' }];
+const WHICH = [{ k: 'both', name: 'Rows and columns' }, { k: 'rows', name: 'Between rows only' }, { k: 'cols', name: 'Between columns only' }];
+const RAINSHOW = [{ k: 'chance', name: 'Chance (%)' }, { k: 'amount', name: 'Amount (in)' }, { k: 'both', name: 'Chance and amount' }];
+const UNITS = [{ k: 'F', name: '°F' }, { k: 'C', name: '°C' }];
+const RMIN = [10, 20, 30, 40, 50].map(v => ({ k: String(v), name: `chance ${v}%+` }));
+const AMIN = () => [{ k: '0', name: 'any amount' }, ...[0.01, 0.05, 0.1, 0.25].map(v => ({ k: String(v), name: `${aMinTxt(v)}+` }))];
+const aMinTxt = v => { if (!MM()) return `${v} in`; const m = v * 25.4; return `${m < 1 ? Math.round(m * 100) / 100 : Math.round(m * 10) / 10} mm`; };
+const AMTU = [{ k: 'in', name: 'inches' }, { k: 'mm', name: 'millimeters' }];
+if (!LAYOUTS[S.layout]) S.layout = '0.09';
+const L = () => LAYOUTS[S.layout];
+const lineColor = () => (LINES.find(l => l.k === S.lines) || LINES[0]).c || L().line;
+
+// the table; past days sit to the left of today and the table opens scrolled to today (R28)
+function days(past) {
+  const n = ahead(), fut = ALL.slice(TI, TI + n);
+  return past ? ALL.slice(Math.max(0, TI - (W.pastDays || 0)), TI).concat(fut) : fut;
+}
+function tableInto(t, past, P) {
+  const lay = L(), ds = days(past);
+  if (S.layout === 'E') ETMP = { scale: eScale(P, ds), best: eBest(P, ds),
+    rowMax: Object.fromEntries(P.map(p => [p.name, ds.reduce((m, iso) => { const h = (p.byDay[iso] || NODAY)[1]; return h != null && (m == null || h > m) ? h : m; }, null)])) };   // one scale and the best days, for this table
+  t.className = 't l' + S.layout.slice(2) + (S.which === 'both' ? '' : ' ' + S.which);
+  t.style.setProperty('--line', lineColor());
+  t.innerHTML = `<div class="corner">${lay.corner()}</div>` + heads(ds) + P.map(p => lay.name(p) + ds.map(iso => lay.box(p, iso)).join('')).join('');
+  return ds;
+}
+// Forecast time (R65; JG: "show what the weather apps don't: time of the forecast and time of next forecast update in a
+// compact format"). Open-Meteo gives each model's newest run, when that run reached its server, and how often the model runs
+// (data\wx_runs_*.js). The run in a copy is taken as the newest one that had reached the server when the copy was made; the
+// next is expected one run later after the same delay, so its time is an estimate. The near days come from NOAA's HRRR model,
+// the later days from NOAA's GFS. Times are as of the copy, since the copy does not update by itself.
+const FT_PARTS = [{ m: 'HRRR', what: 'Next 2 days' }, { m: 'GFS', what: 'Later days' }];
+const FT_STYLES = { 1: 'Clock times', 2: 'How old, how soon', 3: 'Time bars', 4: 'Over the days', 5: 'Rings' };
+const COPY = Date.parse(W.fetched);
+function runOf(m) {
+  const R = window.WXR && WXR.models[m]; if (!R) return null;
+  const delay = (R.avail - R.init) * 1000, every = R.every * 1000; let made = R.init * 1000;
+  while (made + delay > COPY) made -= every;
+  while (made + every + delay <= COPY) made += every;
+  return { made, due: made + every + delay, every, delay };
+}
+const ftRuns = () => FT_PARTS.map(p => Object.assign({}, p, runOf(p.m) || {})).filter(r => r.made);
+const clock = ms => { const d = new Date(ms), h = d.getHours(); return `${h % 12 || 12}:${pad(d.getMinutes())} ${h < 12 ? 'AM' : 'PM'}`; };
+const dayOf = ms => { const d = new Date(ms); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+const clockD = ms => (dayOf(ms) === dayOf(COPY) ? '' : `${WK[new Date(ms).getDay()]} ${dayOf(ms)} `) + clock(ms);   // a date only when not the copy's day
+const span = ms => { const m = Math.round(ms / 60000), h = Math.floor(m / 60); return h ? `${h} h${m % 60 ? ' ' + (m % 60) + ' min' : ''}` : `${m} min`; };
+const ftTip = r => ` title="${esc(`NOAA ${r.m} model, run of ${when(r.made)}. It reached Open-Meteo about ${span(r.delay)} after the run started; the model runs every ${span(r.every)}. The next run is expected about ${when(r.due)}.`)}"`;
+const ftPart = r => Math.max(0, Math.min(1, (COPY - r.made) / (r.due - r.made)));   // how far from this forecast to the next
+const ring = f => { const r = 6, c = 2 * Math.PI * r;
+  return `<svg class="ftring" width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="${r}" fill="none" stroke="#333" stroke-width="3"/><circle cx="8" cy="8" r="${r}" fill="none" stroke="var(--sec)" stroke-width="3" stroke-dasharray="${(f * c).toFixed(2)} ${c.toFixed(2)}" transform="rotate(-90 8 8)"/></svg>`; };
+function ftHtml(st) {
+  const R = ftRuns(), day = `<span><b>Forecast</b> ${WK[new Date(COPY).getDay()]} ${dayOf(COPY)}</span>`;
+  if (!R.length) return '<span>No forecast times with this copy.</span>';
+  if (st == 1) return day + R.map(r => `<span${ftTip(r)}>${r.what}: made <b>${clockD(r.made)}</b>, next about <b>${clockD(r.due)}</b></span>`).join('');
+  if (st == 2) return `<span><b>Forecast</b> as of ${WK[new Date(COPY).getDay()]} ${when(COPY)}</span>` +
+    R.map(r => `<span${ftTip(r)}>${r.what}: <b>${span(COPY - r.made)}</b> old, a new one in about <b>${span(r.due - COPY)}</b></span>`).join('');
+  if (st == 3) return day + R.map(r => { const f = (ftPart(r) * 100).toFixed(1);
+    return `<span${ftTip(r)}>${r.what}: made ${clockD(r.made)}<span class="ftbar"><span class="fill" style="width:${f}%"></span><span class="now" style="left:calc(${f}% - 1px)"></span></span>next ${clockD(r.due)}</span>`; }).join('');
+  if (st == 4) return day.replace('</span>', ': the times are in the band over the days</span>');
+  return day + R.map(r => `<span${ftTip(r)}>${ring(ftPart(r))}${r.what}: ${clockD(r.made)} → ${clockD(r.due)}</span>`).join('');
+}
+function drawFt() {   // the line over the table, in the style chosen under Options
+  if (!FT_STYLES[S.ft]) S.ft = '2';
+  $('ft').innerHTML = ftHtml(S.ft);
+}
+function ftSample(k) {   // Options: each style as it looks; style 4 as a small band over four day headings
+  if (k !== '4') return `<div class="ftl${S.ft === k ? ' on' : ''}">${ftHtml(k)}</div>`;
+  const runs = FT_PARTS.map(p => Object.assign({}, p, runOf(p.m) || {})), txt = r => r.made ? `made ${clockD(r.made)} · next ${clockD(r.due)}` : '';
+  return `<div class="t ftband${S.ft === k ? ' ftl on' : ''}" style="grid-template-columns:56px repeat(4, 79px);--line:#555;padding:0"><div class="fband fcorner">Forecast</div>` +
+    `<div class="fband" style="grid-column:span 2">${txt(runs[0])}</div><div class="fband" style="grid-column:span 2">${txt(runs[1])}</div>` +
+    `<div class="corner"></div>${heads([0, 1, 2, 3].map(n => addDay(TODAY, n)))}</div>`;
+}
+function ftBand(t, ds) {   // style 4: a band over the day headings, saying which forecast each day comes from
+  const runs = FT_PARTS.map(p => Object.assign({}, p, runOf(p.m) || {})), per = L().halves ? 2 : 1;
+  const past = ds.filter(iso => iso < TODAY).length, near = Math.min(2, ds.length - past), later = ds.length - past - near;
+  const cell = (n, html, r) => n > 0 ? `<div class="fband"${r && r.made ? ftTip(r) : ''} style="grid-column:span ${n * per}">${html}</div>` : '';
+  const txt = r => r.made ? `made ${clockD(r.made)} · next ${clockD(r.due)}` : '';
+  t.insertAdjacentHTML('afterbegin', `<div class="fband fcorner">Forecast</div>` + cell(past, 'past days') + cell(near, txt(runs[0]), runs[0]) + cell(later, txt(runs[1]), runs[1]));
+}
+function drawTable() {
+  const t = $('t'), P = chosen();
+  if (!P.length) { t.className = ''; t.style.gridTemplateColumns = ''; t.innerHTML = '<div class="empty">No places are in the table. Choose them in Locations, or press Near me there.</div>'; drawPreviews(); return; }
+  const ds = tableInto(t, true, P); if (S.ft === '4') ftBand(t, ds); fit(true);
+  $('ab').textContent = ''; WXTA.decorate('ab', n => placeOf(n));   // the place's lat and lon, for the Weather Service link
+  drawPreviews();
+}
+function fit(scrollToToday) {   // columns keep one compact width, however many days (JG: "5 days in the space of 10 affects
+  // visual scanning and memory: the data is too far apart"); more days than fit scroll sideways; rows share the height
+  const lay = L(), t = $('t'), tw = $('tw'), nd = days(true).length, per = lay.halves ? 2 : 1;
+  const cw = lay.cw;
+  t.style.gridTemplateColumns = `${lay.nameW}px repeat(${nd * per}, ${cw}px)`;
+  // empty space after the last day, so the table can still open with today at the left edge when the days ahead are few
+  const vw = tw.clientWidth || window.innerWidth;
+  t.style.paddingRight = Math.max(0, vw - lay.nameW - ahead() * per * cw) + 'px';
+  const band = t.querySelector('.fband'), avail = window.innerHeight - $('strip').offsetHeight - $('ft').offsetHeight - 18 - (band ? band.offsetHeight : 0) - (tw.offsetHeight - tw.clientHeight), n = Math.max(1, chosen().length);
+  t.style.setProperty('--rh', Math.min(Math.round(lay.minRh * 1.5), Math.max(lay.minRh, Math.floor(avail / n))) + 'px');
+  if (scrollToToday) tw.scrollLeft = (nd - ahead()) * per * cw;
+}
+function drawPreviews() {   // Explainer and Options show the table they are about: today on, the places chosen, small
+  ['xpreview', 'opreview'].forEach(id => {
+    const box = $(id), P = chosen();
+    if (!P.length) { box.innerHTML = ''; return; }
+    box.innerHTML = '<div class="t"></div>';
+    const t = box.firstChild; tableInto(t, false, P.slice(0, 6));
+    t.style.gridTemplateColumns = `${L().nameW}px repeat(${days(false).length * (L().halves ? 2 : 1)}, ${L().cw}px)`;
+    t.style.setProperty('--rh', L().minRh + 'px');
+  });
+}
+// days ahead (JG: "Allow setting the number of days to show"; "Don't assume anything about the number of days: give all
+// options"): every count from 1 to as many as the copy holds (16, Open-Meteo's most). Until one is chosen: 10.
+const MAXAHEAD = ALL.length - TI;
+const AHEAD = Array.from({ length: MAXAHEAD }, (_, i) => ({ k: String(i + 1), name: `${i + 1} day${i ? 's' : ''}` }));
+function ahead() { return Math.min(+S.ahead || 10, MAXAHEAD); }
+function fillRain() { }   // 0.20-0.24 also had the chooser in the strip; JG: "Do not show the Precip in the top row: only under Options"
+function fillAhead() {
+  $('ndays').innerHTML = AHEAD.map(o => `<option value="${o.k}">${o.name}</option>`).join('');
+  $('ndays').value = String(ahead());
+}
+function fillLayouts() {
+  $('layout').innerHTML = ORDER.map(v => `<option value="${v}">${NAME(v)}</option>`).join('');   // no stars here (JG: "Do not show the stars")
+  $('layout').value = S.layout;
+}
+const TABS = { locs: 'pLocs', table: 'pTable', expl: 'pExpl', fcst: 'pFcst', clim: 'pClim', opts: 'pOpts', about: 'pAbout' };
+function showTab() {
+  if (!TABS[S.tab]) S.tab = 'table';
+  document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === S.tab));
+  Object.entries(TABS).forEach(([k, id]) => { $(id).hidden = S.tab !== k; });
+  if (S.tab === 'table') fit(true);
+  if (S.tab === 'about') drawDevice();
+}
+
+// ---------- Locations ----------
+const toRad = d => d * Math.PI / 180;
+function miles(a, b) { const dLat = toRad(b.lat - a.lat), dLon = toRad(b.lon - a.lon);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLon / 2) ** 2; return 3958.8 * 2 * Math.asin(Math.sqrt(h)); }
+function bearing(a, b) { const y = Math.sin(toRad(b.lon - a.lon)) * Math.cos(toRad(b.lat));
+  const x = Math.cos(toRad(a.lat)) * Math.sin(toRad(b.lat)) - Math.sin(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.cos(toRad(b.lon - a.lon));
+  return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360; }
+const wuUrl = p => `https://www.wunderground.com/forecast/${p.lat},${p.lon}`;
+let here = null;   // the device's position, after Use GPS or Near me on this visit; never saved
+$('twu').addEventListener('change', () => { S.wu = $('twu').checked; save(); drawLocs(); refresh(); });   // 0.44: here, not in Options
+function drawLocs() {
+  $('twu').checked = !!S.wu;
+  $('plist').innerHTML = S.places.map((x, i) => {
+    const p = placeOf(x.name); if (!p) return '';
+    if (x.del) return `<div class="prow" data-name="${esc(p.name)}"><span class="grip"></span><span class="sec">Deleted <b>${esc(p.name)}</b></span><button class="btn" data-undo="${i}">Undo</button></div>`;
+    const d = here ? `<span class="dist"><span class="arrow" style="transform:rotate(${Math.round(bearing(here, p))}deg)">▲</span> ${Math.round(miles(here, p))} mi</span>` : '';
+    const wu = S.wu ? `<a href="${wuUrl(p)}" target="_blank" rel="noopener" title="Weather Underground's 10-day forecast for this spot: another good forecast">WU ↗</a>` : '';
+    const note = esc(p.note || '');
+    return `<div class="prow" data-name="${esc(p.name)}"><span class="grip" aria-label="Drag to reorder">≡</span><label class="pl"><input type="checkbox" data-i="${i}"${x.on ? ' checked' : ''}><span>${esc(p.name)}</span><span class="d">${note ? note + ' · ' : ''}${(p.elevFt || 0).toLocaleString()} ft${x.wx ? ' · added, copy of ' + when(Date.parse(x.wx.fetched)) : ''}</span></label>${d}${wu}<button class="del" data-del="${i}">Delete</button></div>`;
+  }).join('');
+  drawSetsList();
+}
+$('plist').addEventListener('change', e => { const c = e.target.closest('[data-i]'); if (!c) return; S.places[+c.dataset.i].on = c.checked; save(); drawTable(); drawClim(); });
+// Delete leaves an Undo in the same place (JG: "After Delete add an Undo")
+$('plist').addEventListener('click', e => {
+  const b = e.target.closest('[data-del]'), u = e.target.closest('[data-undo]'); if (!b && !u) return;
+  const x = S.places[+(b || u).dataset[b ? 'del' : 'undo']]; if (b) x.del = true; else delete x.del;
+  save(); drawLocs(); drawTable(); drawClim(); });
+// drag to reorder (R37): press the ≡ handle and move
+let drag = null;
+$('plist').addEventListener('pointerdown', e => { const h = e.target.closest('.grip'); if (!h) return; e.preventDefault();
+  drag = h.closest('.prow'); drag.classList.add('dragging'); h.setPointerCapture(e.pointerId); });
+$('plist').addEventListener('pointermove', e => { if (!drag) return;
+  const rows = [...$('plist').children], target = rows.find(r => r !== drag && e.clientY < r.getBoundingClientRect().top + r.offsetHeight / 2);
+  if (target) { if (target !== drag.nextSibling) $('plist').insertBefore(drag, target); } else if (drag !== $('plist').lastChild) $('plist').appendChild(drag); });
+function endDrag() { if (!drag) return; drag.classList.remove('dragging'); drag = null;
+  const names = [...$('plist').children].map(r => r.dataset.name); S.places.sort((a, b) => names.indexOf(a.name) - names.indexOf(b.name));
+  save(); drawLocs(); drawTable(); }
+$('plist').addEventListener('pointerup', endDrag); $('plist').addEventListener('pointercancel', endDrag);
+
+function busy(btn, label, on) { btn.classList.toggle('wait', on); btn.textContent = label; }
+function gpsThen(btn, idle, label, done) {
+  if (!navigator.geolocation) { $('pmsg').textContent = 'This browser cannot give a position.'; return; }
+  busy(btn, label, true);
+  navigator.geolocation.getCurrentPosition(pos => { busy(btn, idle, false); here = { lat: pos.coords.latitude, lon: pos.coords.longitude }; done(here); },
+    err => { busy(btn, idle, false); $('pmsg').textContent = err.code === 1 ? 'Position not allowed: the browser or phone said no.' : 'No position found: ' + err.message; },
+    { enableHighAccuracy: false, timeout: 15000, maximumAge: 600000 });
+}
+$('gps').addEventListener('click', () => gpsThen($('gps'), 'Use GPS', 'GPS finding', h => offer({ name: 'GPS spot ' + when(Date.now()), lat: h.lat, lon: h.lon, note: '', src: 'GPS' })));
+// Near me: the nearest places in the list, checked, nearest first
+$('nearme').addEventListener('click', () => gpsThen($('nearme'), 'Near me', 'Near me finding', h => {
+  const n = S.layout === '0.08' ? 10 : 6;
+  S.places.sort((a, b) => miles(h, placeOf(a.name)) - miles(h, placeOf(b.name)));
+  S.places.filter(x => !x.del).forEach((x, i) => { x.on = i < n; });
+  save(); drawLocs(); drawTable(); drawClim();
+  $('nearmsg').textContent = `The ${Math.min(n, S.places.length)} places nearest you are checked, nearest first.`;
+}));
+
+// adding a location: search, paste or GPS offers it; Add fetches its forecast (and alerts and climate) once, as its copy
+let pending = null;
+function offer(loc) {
+  pending = loc; $('addrow').hidden = false; $('aname').value = loc.name;
+  $('awhere').textContent = `${loc.lat.toFixed(4)}, ${loc.lon.toFixed(4)} · from ${loc.src}. Add fetches its forecast now and keeps it as a copy.`;
+  $('aname').focus();
+}
+$('acancel').addEventListener('click', () => { pending = null; $('addrow').hidden = true; });
+const offStr = s => `${s < 0 ? '-' : '+'}${pad(Math.floor(Math.abs(s) / 3600))}:${pad(Math.floor(Math.abs(s) % 3600 / 60))}`;
+const rnd = (v, n) => v == null ? null : n ? Math.round(v * 10 ** n) / 10 ** n : Math.round(v);
+async function getJson(url, opts) { const r = await fetch(url, opts); if (r.status === 429) throw new Error('Open-Meteo is busy (too many requests); try again in a minute'); if (!r.ok) throw new Error('the server answered ' + r.status); return r.json(); }
+async function fetchForecast(lat, lon) {   // the same request as fetch_snapshot_c.py, for one place
+  const d = await getJson(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_gusts_10m_max,weather_code&hourly=temperature_2m,precipitation_probability,wind_gusts_10m,precipitation&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&past_days=${W.pastDays || 7}&forecast_days=16`);
+  const D = d.daily, H = d.hourly;
+  return { fetched: new Date().toISOString(), offset: offStr(d.utc_offset_seconds || 0), elevFt: Math.round((d.elevation || 0) * 3.28084),
+    days: D.time.map((t, i) => [t, rnd(D.temperature_2m_max[i]), rnd(D.temperature_2m_min[i]), D.precipitation_probability_max[i] ?? 0, rnd(D.precipitation_sum[i], 2), rnd(D.wind_gusts_10m_max[i]), D.weather_code ? D.weather_code[i] : null]),
+    hours: H.time.map((t, i) => [t, rnd(H.temperature_2m[i]), H.precipitation_probability[i], rnd(H.wind_gusts_10m[i]), rnd(H.precipitation[i], 2)]) };
+}
+async function fetchAlerts(lat, lon) {      // National Weather Service, as fetch_alerts.py
+  const j = await getJson(`https://api.weather.gov/alerts/active?point=${lat.toFixed(4)},${lon.toFixed(4)}`, { headers: { Accept: 'application/geo+json' } });
+  const keep = ['event', 'severity', 'onset', 'effective', 'ends', 'expires', 'headline'];
+  return (j.features || []).map(f => Object.fromEntries(keep.map(k => [k, f.properties[k]])));
+}
+async function fetchClimate(lat, lon) {     // as data\fetch_climate_t.py: last 7, 30, 90 days, 6 and 12 months against 1991-2020
+  const api = (s, e) => `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${s}&end_date=${e}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&temperature_unit=fahrenheit&precipitation_unit=inch&timezone=auto`;
+  const ymd = ms => new Date(ms).toISOString().slice(0, 10), now = Date.now();
+  const a = (await getJson(api(ymd(now - 380 * 864e5), ymd(now - 864e5)))).daily;
+  const rows = a.time.map((t, i) => [t, a.temperature_2m_max[i], a.temperature_2m_min[i], a.precipitation_sum[i]]).filter(r => r[1] != null && r[2] != null && r[3] != null);
+  const b = (await getJson(api('1991-01-01', '2020-12-31'))).daily, acc = {};
+  b.time.forEach((t, i) => { const md = t.slice(5), hi = b.temperature_2m_max[i], lo = b.temperature_2m_min[i], p = b.precipitation_sum[i];
+    if (md === '02-29' || hi == null || lo == null || p == null) return; const s = acc[md] || (acc[md] = [0, 0, 0, 0]); s[0] += hi; s[1] += lo; s[2] += p; s[3]++; });
+  const w = {};
+  CWIN.forEach(([k]) => { const n = +k, win = rows.slice(-n), nd = win.map(r => acc[r[0].slice(5)]).filter(Boolean), avg = f => f / win.length;
+    w[n] = { from: win[0][0], to: win[win.length - 1][0], hi: rnd(avg(win.reduce((s, r) => s + r[1], 0)), 1), nhi: rnd(nd.reduce((s, x) => s + x[0] / x[3], 0) / nd.length, 1),
+      lo: rnd(avg(win.reduce((s, r) => s + r[2], 0)), 1), nlo: rnd(nd.reduce((s, x) => s + x[1] / x[3], 0) / nd.length, 1),
+      rain: rnd(win.reduce((s, r) => s + r[3], 0), 2), nrain: rnd(nd.reduce((s, x) => s + x[2] / x[3], 0), 2) }; });
+  return { through: rows[rows.length - 1][0], w };
+}
+function uniqueName(n) { let m = n, k = 2; while (S.places.some(x => x.name === m)) m = `${n} (${k++})`; return m; }
+$('aadd').addEventListener('click', async () => {
+  const btn = $('aadd'); if (!pending || btn.disabled) return;
+  const loc = pending, name = uniqueName($('aname').value.trim() || loc.name);
+  busy(btn, 'Adding', true); btn.disabled = true; $('pmsg').textContent = '';
+  try {
+    const wx = await fetchForecast(loc.lat, loc.lon);
+    const x = { name, on: true, lat: loc.lat, lon: loc.lon, note: loc.note || '', wx };
+    const notes = [];
+    try { x.alerts = await fetchAlerts(loc.lat, loc.lon); } catch (e) { notes.push('alerts not fetched (' + e.message + ')'); }
+    try { x.clim = await fetchClimate(loc.lat, loc.lon); } catch (e) { notes.push('climate not fetched (' + e.message + ')'); }
+    S.places.push(x); save(); joinAdded();
+    pending = null; $('addrow').hidden = true; busy(btn, 'Add', false); btn.disabled = false;
+    drawLocs(); drawTable(); drawClim();
+    // nothing to say when it worked (JG: "Remove this: Added GPS spot ..."); only what did not work
+    $('pmsg').textContent = notes.length ? `${name}: ` + notes.join('; ') + '.' : '';
+  } catch (e) { busy(btn, 'Add', false); btn.disabled = false; $('pmsg').textContent = `Could not add ${name}: ${e.message}.`; }
+});
+
+// saved sets of locations: a name and a description; the date and time are recorded automatically
+function drawSetsList() {
+  $('slist').innerHTML = S.sets.map((s, i) => s.del ? `<div class="row2" style="margin:3px 0"><span class="sec">Deleted set <b>${esc(s.name)}</b></span><button class="btn" data-sundo="${i}">Undo</button></div>` : `<div class="row2" style="margin:3px 0"><button class="btn" data-sload="${i}">Load</button><b>${esc(s.name)}</b>${s.desc ? `<span>${esc(s.desc)}</span>` : ''}<span class="sec">${s.places.length} places · saved ${when(s.at)}</span><button class="del" data-sdel="${i}">Delete</button></div>`).join('');
+}
+$('ssave').addEventListener('click', () => {
+  const name = $('sname').value.trim(); if (!name) { $('sname').focus(); return; }
+  const rec = { name, desc: $('sdesc').value.trim(), at: Date.now(), places: JSON.parse(JSON.stringify(S.places.filter(x => !x.del))) };
+  const old = S.sets.findIndex(s => s.name === name); if (old >= 0) S.sets[old] = rec; else S.sets.push(rec);
+  save(); $('sname').value = ''; $('sdesc').value = ''; drawSetsList();
+});
+$('slist').addEventListener('click', e => {
+  const l = e.target.closest('[data-sload]'), d = e.target.closest('[data-sdel]'), u = e.target.closest('[data-sundo]');
+  if (u) { delete S.sets[+u.dataset.sundo].del; save(); drawSetsList(); }
+  if (l) { S.places = JSON.parse(JSON.stringify(S.sets[+l.dataset.sload].places)); save(); joinAdded(); drawLocs(); drawTable(); drawClim(); }
+  if (d) { S.sets[+d.dataset.sdel].del = true; save(); drawSetsList(); }
+});
+
+// search by town and state, results as you type (Open-Meteo geocoding; US only)
+const STATES = { AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California', CO: 'Colorado', CT: 'Connecticut', DE: 'Delaware', DC: 'District of Columbia',
+  FL: 'Florida', GA: 'Georgia', HI: 'Hawaii', ID: 'Idaho', IL: 'Illinois', IN: 'Indiana', IA: 'Iowa', KS: 'Kansas', KY: 'Kentucky', LA: 'Louisiana', ME: 'Maine',
+  MD: 'Maryland', MA: 'Massachusetts', MI: 'Michigan', MN: 'Minnesota', MS: 'Mississippi', MO: 'Missouri', MT: 'Montana', NE: 'Nebraska', NV: 'Nevada',
+  NH: 'New Hampshire', NJ: 'New Jersey', NM: 'New Mexico', NY: 'New York', NC: 'North Carolina', ND: 'North Dakota', OH: 'Ohio', OK: 'Oklahoma', OR: 'Oregon',
+  PA: 'Pennsylvania', RI: 'Rhode Island', SC: 'South Carolina', SD: 'South Dakota', TN: 'Tennessee', TX: 'Texas', UT: 'Utah', VT: 'Vermont', VA: 'Virginia',
+  WA: 'Washington', WV: 'West Virginia', WI: 'Wisconsin', WY: 'Wyoming' };
+let qTimer = null, qSeq = 0;
+$('q').addEventListener('input', () => { clearTimeout(qTimer); qTimer = setTimeout(search, 300); });
+async function search() {
+  const raw = $('q').value.trim(), seq = ++qSeq;
+  if (raw.length < 2) { $('hits').innerHTML = ''; return; }
+  const [town, st] = raw.split(',').map(s => s.trim());
+  const want = st ? (STATES[st.toUpperCase()] || st).toLowerCase() : '';
+  try {
+    const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(town)}&count=20&language=en&format=json&countryCode=US`);
+    const j = await r.json(); if (seq !== qSeq) return;
+    const hits = (j.results || []).filter(h => !want || (h.admin1 || '').toLowerCase().startsWith(want)).slice(0, 8);
+    $('hits').innerHTML = hits.length ? hits.map((h, i) => `<button data-h="${i}">${esc(h.name)}, ${esc(h.admin1 || '')}${h.admin2 ? ' · ' + esc(h.admin2) : ''}${h.elevation != null ? ' · ' + Math.round(h.elevation * 3.28084).toLocaleString() + ' ft' : ''}</button>`).join('') : '<div class="sec">No US place by that name.</div>';
+    $('hits').onclick = e => { const b = e.target.closest('[data-h]'); if (!b) return; const h = hits[+b.dataset.h];
+      const ab = Object.keys(STATES).find(k => STATES[k] === h.admin1) || h.admin1 || '';
+      offer({ name: h.name, lat: h.latitude, lon: h.longitude, note: ab, src: `search (${h.name}, ${h.admin1 || ''})` }); $('hits').innerHTML = ''; $('q').value = ''; };
+  } catch (e) { if (seq === qSeq) $('hits').innerHTML = '<div class="sec">Search needs a connection; none now.</div>'; }
+}
+// paste a position: decimal pair, N/S/E/W, degrees-minutes-seconds, or a Google Maps link
+function parsePos(s) {
+  s = s.trim(); let m;
+  if ((m = s.match(/@(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/))) return [+m[1], +m[2]];
+  const dms = [...s.matchAll(/(\d+(?:\.\d+)?)\s*°\s*(?:(\d+(?:\.\d+)?)\s*['′’]\s*)?(?:(\d+(?:\.\d+)?)\s*(?:["″”]|'')\s*)?([NSEW])/gi)];
+  if (dms.length === 2) {
+    const v = x => (+x[1] + (+x[2] || 0) / 60 + (+x[3] || 0) / 3600) * (/[SW]/i.test(x[4]) ? -1 : 1);
+    const a = dms.find(x => /[NS]/i.test(x[4])), b = dms.find(x => /[EW]/i.test(x[4])); if (a && b) return [v(a), v(b)];
+  }
+  if ((m = s.match(/(\d+(?:\.\d+)?)\s*°?\s*([NS])[\s,]+(\d+(?:\.\d+)?)\s*°?\s*([EW])/i))) return [+m[1] * (/s/i.test(m[2]) ? -1 : 1), +m[3] * (/w/i.test(m[4]) ? -1 : 1)];
+  if ((m = s.match(/^\(?\s*(-?\d{1,2}(?:\.\d+)?)\s*[,\s]\s*(-?\d{1,3}(?:\.\d+)?)\s*\)?$/))) return [+m[1], +m[2]];
+  return null;
+}
+function readPaste(commit) {
+  const v = $('paste').value;
+  if (!v.trim()) { $('pmsg').textContent = ''; return; }
+  const ll = parsePos(v);
+  if (!ll || Math.abs(ll[0]) > 90 || Math.abs(ll[1]) > 180) { $('pmsg').textContent = 'Not a position this can read. Tap i for the forms it takes.'; return; }
+  const us = ll[0] > 18 && ll[0] < 72 && ll[1] < -64 && ll[1] > -180;
+  $('pmsg').textContent = us ? '' : ll[1] > 64 ? 'That is east of Greenwich: a US longitude is negative (west).' : 'That is outside the US.';
+  if (!commit) return;
+  offer({ name: `Place at ${ll[0].toFixed(3)}, ${ll[1].toFixed(3)}`, lat: ll[0], lon: ll[1], note: '', src: 'a pasted position' });
+  $('paste').value = '';
+}
+$('paste').addEventListener('input', () => readPaste(false));
+$('paste').addEventListener('paste', () => setTimeout(() => readPaste(true), 0));
+$('paste').addEventListener('change', () => readPaste(true));   // Enter, or leaving the box
+$('pinfo').addEventListener('click', () => { $('phelp').hidden = !$('phelp').hidden; });
+
+// ---------- Explainer: the table, then a key of real sample boxes ----------
+function sample(cols, html, cls = '') { return `<div class="sample"><div class="t ${cls}" style="grid-template-columns:${cols};--rh:38px;--line:#555">${html}</div></div>`; }
+const sbox = (inner, style = '', cls = '') => `<div class="c ${cls}" style="${style}">${inner}</div>`;
+const shl = (hi, lo, l2 = '') => `<span class="hi">${T(hi)}</span><span class="lo">${T(lo)}</span><div class="l2">${l2}</div>`;
+function drawKey() {
+  // meaning first, then how it is drawn (JG: "The Explainer is inverted: the user does not care about blue bar: they care
+  // about Precipitation"); temperature, then precipitation, then the smaller elements (JG: "Begin with Temperature, then
+  // Precip, then smaller graphic elements"); a checkbox on each that can be turned off (JG: "add a checkbox for each")
+  const lay = S.layout, items = [], o = EO();
+  const head = t => items.push(`<h2 style="grid-column:1 / -1;margin:8px 0 0">${t}</h2>`);
+  const k = (smp, what, how, box) => items.push(`<div class="kitem">${smp}<div class="words">${box ? `<label class="ck"><input type="checkbox" ${box}><b>${what}</b></label>` : `<b>${what}</b>`} ${how}</div></div>`);
+  const eck = key => `data-ek="${key}"${o[key] ? ' checked' : ''}`;
+  const past = sample('80px', '<div class="hd past">Wed 22</div>'), today = sample('80px', '<div class="hd today">Thu 29</div>');
+  if (lay === 'EB') {
+    const ebs = (kind, hi, lo, l2 = '<span></span><span></span>') => sample('80px', `<div class="c eb"><div class="ebtop">${skySvg(kind)}<span class="ebt"><span class="hi">${T(hi)}</span><span class="lo">${T(lo)}</span></span></div><div class="l2">${l2}</div></div>`);
+    head('Temperature');
+    k(ebs('sun', 68, 45), 'Temperature', `the day's high in yellow, its low in blue (${U()}).`);
+    k(sample('80px', sbox(`<span class="hi">${T(66)}<span class="chg">${FAT.up}</span></span><span class="lo">${T(47)}</span><div class="l2"><span class="r">62%<span class="chg">${FAT.dn}</span></span><span></span></div>`)),
+      'Changes since the previous forecast', '↑ or ↓ beside a high that moved 3 °F or more, or a precip chance that moved 20 points or more.', `data-chg${S.changes ? ' checked' : ''}`);
+    head('Sky');
+    [['sun', 'Sunny'], ['part', 'Partly cloudy'], ['cloud', 'Cloudy'], ['fog', 'Fog'], ['drizzle', 'Drizzle'], ['rain', 'Rain'], ['showers', 'Showers'], ['snow', 'Snow'], ['thunder', 'Thunderstorms']]
+      .forEach(([kind, word]) => k(ebs(kind, 60, 42), word, 'the day\'s most significant weather (Open-Meteo\'s daily weather code).'));
+    head('Precipitation');
+    k(ebs('rain', 61, 47, `<span class="r big">${rainTxt(76, 0.12, S.rainshow)}</span><span></span>`), 'Precipitation',
+      `in blue, shown from a ${rMin()}% chance${aMin() ? ` with at least ${aMinTxt(aMin())}` : ''}: ${{ chance: 'the chance', amount: `the amount for the day, ${MM() ? 'millimeters' : 'inches'}`, both: `the chance and the amount for the day, ${MM() ? 'millimeters' : 'inches'}` }[S.rainshow]}. Bold at 50% or more.`);
+    head('Also shown');
+    k(ebs('part', 58, 40, '<span></span><span class="w">18</span>'), 'Wind gusts', `in white, mph, shown from ${GUST_MIN}; ${GUST_LIMIT} mph or more on yellow.`);
+    k(sample('80px', sbox(shl(62, 45, '<span></span><span></span>') + '<span class="tri k3">▲</span>')), 'Weather Service alerts', '▲ warning, △ watch, small △ advisory. Tap the box for the details.');
+    k(today, 'Today', 'yellow heading, and a yellow edge down the column. Weekend days in white.');
+    k(past, 'Past days', `dimmed, with a slanted gray heading: scroll the table left to see them. The symbol and temperatures are what happened, with the precip that fell in ${MM() ? 'millimeters' : 'inches'}.`);
+  } else if (lay === 'E') {
+    head('Temperature');
+    k(eSample({ bar: true }), 'Temperature', 'a bar from the day\'s low (blue end) to its high (yellow end), on one scale for the whole table: higher and taller is warmer. Hold a finger or the mouse on a box for the numbers.', eck('bar'));
+    k(eSample({ bar: true, maxline: true }), 'Each place\'s warmest high', 'a faint gray line across that place\'s row at its highest temperature: how far each bar falls below it shows how much cooler that day is.', eck('maxline'));
+    k(eSample({ bar: true, usual: true }), 'Usual temperatures for the date', 'the gray band behind the bar (1991–2020). A bar above the band: warmer than usual.', eck('usual'));
+    k(eSample({ bar: true, comfort: true }), 'Your comfortable temperatures', `the yellow tint, ${T(o.comfLo)}–${T(o.comfHi)} ${U()} (set under Options).`, eck('comfort'));
+    k(eSample({ bar: true, fuzz: true }), 'How far off the forecast may be', 'the faint ends on the bar: the typical miss that many days ahead, longer further out.', eck('fuzz'));
+    k(eSample({ bar: true, prev: true }), 'The high in the previous forecast', 'the dashed line, when it has moved.', eck('prev'));
+    k(eSample({ bar: true, nums: true }), 'Temperatures as numbers', 'beside the bar.', eck('nums'));
+    head('Precipitation');
+    k(eSample({ precip: true }), 'Precipitation', 'the blue column: its height is the amount (1 in fills it), how solid it is, the chance. On past days it is solid: what fell.', eck('precip'));
+    k(eSample({ precip: true, hours: true }), 'When in the day', 'ticks along the bottom for the hours with precip (here, noon to 5 PM).', eck('hours'));
+    head('Also shown');
+    k(eSample({ gust: true }), 'Wind gusts', `the line at the right: longer for stronger, yellow at ${GUST_LIMIT} mph or more; none below ${GUST_MIN} mph.`, eck('gust'));
+    k(eSample({ best: true }), 'Each place\'s best day ahead', 'the yellow square. A placeholder rule until you set one: temperature, then dry, then calm.', eck('best'));
+    k(sample('80px', sbox('', '', 'g') + '<span class="tri k3">▲</span>'), 'Weather Service alerts', '▲ warning, △ watch, small △ advisory. Tap the box for the details.');
+    k(today, 'Today', 'yellow heading, and a yellow edge down the column. Weekend days in white.');
+    k(past, 'Past days', 'dimmed, with a slanted gray heading: scroll the table left to see them. The bar is what happened; the blue column, what fell.');
+  } else {
+    head('Temperature');
+    if (lay === '0.07') k(sample('40px 40px', sbox('<span class="hi">' + T(68) + '</span><div class="l2"></div>', '', 'd') + sbox('<span class="lo">' + T(45) + '</span><div class="l2"></div>', 'background:#161a22', 'n'), 'l07'),
+      'Temperature, day and night', `the day's high (6 AM–6 PM) in yellow; the night's low (6 PM–6 AM, darker box) in blue (${U()}).`);
+    else if (lay === '0.08') k(sample('80px', `<div class="c one"><span class="hi">${T(68)}</span></div>`), 'Temperature', `the day's high, in yellow (${U()}). Hold a finger or the mouse on a box for the low.`);
+    else k(sample('80px', sbox(shl(68, 45, '<span></span><span></span>'))), 'Temperature', `the day's high in yellow, its low in blue (${U()}).`);
+    k(sample('80px', sbox(`<span class="hi">${T(66)}<span class="chg">${FAT.up}</span></span><span class="lo">${T(47)}</span><div class="l2"><span class="r">62%<span class="chg">${FAT.dn}</span></span><span></span></div>`)),
+      'Changes since the previous forecast', '↑ or ↓ beside a high that moved 3 °F or more, or a precip chance that moved 20 points or more.', `data-chg${S.changes ? ' checked' : ''}`);
+    head('Precipitation');
+    k(sample('80px', sbox(shl(61, 47, `<span class="r big">${rainTxt(76, 0.12, S.rainshow)}</span><span></span>`))),
+      'Precipitation', `in blue, shown from a ${rMin()}% chance${aMin() ? ` with at least ${aMinTxt(aMin())}` : ''}: ${{ chance: 'the chance', amount: `the amount for the day, ${MM() ? 'millimeters' : 'inches'}`, both: `the chance and the amount for the day, ${MM() ? 'millimeters' : 'inches'}` }[S.rainshow]}. Bold at 50% or more. A chance means at least ${aMinTxt(0.01)} at this spot.`);
+    if (lay === '0.09') k(sample('80px', sbox(shl(50, 44, `<span class="r big">98%</span><span class="w over">31</span>`), `background:rgb(${gray(98, 31)},${gray(98, 31)},${gray(98, 31)})`)),
+      'Precipitation and wind, at a glance', 'the gray behind the day: fuller gray, more of both. A clear day stays black.');
+    head('Also shown');
+    k(sample('80px', sbox(shl(58, 40, '<span></span><span class="w">18</span>'))), 'Wind gusts', `in white, mph, shown from ${GUST_MIN}; ${GUST_LIMIT} mph or more on yellow.`);
+    k(sample('80px', sbox(shl(68, 45, '<span></span><span></span>'))), 'A clear day', 'nothing but the temperatures: dry and calm.');
+    k(sample('80px', sbox(shl(62, 45, '<span></span><span></span>') + '<span class="tri k3">▲</span>')), 'Weather Service alerts', '▲ warning, △ watch, small △ advisory. Tap the box for the details.');
+    k(today, 'Today', 'yellow heading, and a yellow edge down the column. Weekend days in white.');
+    k(past, 'Past days', `dimmed, with a slanted gray heading: scroll the table left to see them. They show what happened, with the precip that fell in ${MM() ? 'millimeters' : 'inches'}.`);
+  }
+  $('key').innerHTML = items.join('');
+  $('src').textContent = `Forecast: Open-Meteo, copy of ${when(Date.parse(W.fetched))}; previous copy ${when(Date.parse(window.WXP.fetched))}. Alerts: National Weather Service, ${when(Date.parse(window.WXA.fetched))}. Fixed copies for this prototype: they do not update by themselves; a new copy is fetched when JG asks. Choices stay on this device; sync is not built yet.`;
+}
+
+// ---------- Forecasting: what the research found (research\WxForecastResearch_v04.md) ----------
+function drawFcst() {
+  const miss = [3.1, 3.5, 3.9, 4.4, 5.1, 5.7, 6.6];   // RMSE of the high, US consumer forecasts, 2016 (ForecastWatch, S17)
+  const scale = 12, u = U();
+  $('bars').innerHTML = miss.map((v, i) => `<span>${i + 1} day${i ? 's' : ''}</span><div class="b" style="width:${v / scale * 100}%"></div><span class="n">${dT(v).toFixed(1)} ${u} <span class="sec">typical miss</span></span>`).join('')
+    + `<span>Average for the date</span><div class="b cal" style="width:${6 / scale * 100}%"></div><span class="n">${dT(6).toFixed(0)}–${dT(12).toFixed(0)} ${u} <span class="sec">typical miss</span></span>`;
+  // NOAA GEFS 24-hour precipitation, Brier skill score against climatology, CONUS, 2025 annual means, read from the charts (research S20)
+  const SK = [[1, 0.58, 0.28], [3, 0.48, 0.14], [5, 0.34, 0.03], [10, 0.03, -0.27]], span = 0.9, zero = 0.3;
+  const rbar = (v, cls) => { const w = Math.abs(v) / span * 100, left = (zero + Math.min(v, 0)) / span * 100;
+    return `<div class="rtr"><span class="z"></span><span class="v ${v < 0 ? 'neg' : cls}" style="left:${left}%;width:${w}%"></span></div>`; };
+  const say = v => `${v > 0.005 ? `${Math.round(v * 100)}% better` : v < -0.005 ? `${Math.round(-v * 100)}% worse` : 'no better'} <span class="sec">than the usual odds</span>`;   // said in full on every bar (JG: "58% better - than what? repeat key information")
+  const small = MM() ? '1 mm' : '0.04 in', big = MM() ? '10 mm' : '0.4 in';   // NOAA scores 1 mm and 10 mm
+  $('rbars').innerHTML = SK.map(([d, any, real]) =>
+    `<span>${d} day${d > 1 ? 's' : ''}: any precip</span>${rbar(any, 'any')}<span class="n">${say(any)}</span>`
+    + `<span>${d} day${d > 1 ? 's' : ''}: ${big}+</span>${rbar(real, 'real')}<span class="n">${say(real)}</span>`).join('');
+  $('facts').innerHTML = [
+    `<b>Precip:</b> a forecast of any precip (${small} or more) is still a little better than the usual odds out to about day 10. A forecast of heavier precip (${big} or more) is barely better than the usual odds by day 5, and worse than them by day 10. Precip is harder to forecast than temperature: the European weather center counts a day's precip forecast as useful only about 3 to 4 days ahead (about 7 days when it is given as a chance).`,
+    '<b>The same chance can mean different things from different sources:</b> in older studies the Weather Service\'s chances were a little too low, while after one app said 20%, precip came only about 1 time in 20. No published accuracy was found for precip amounts by day.',
+    `<b>The gray bar</b> is how far off you would be with no forecast at all, using only the average for the date (it varies from summer to winter). By about day 9 the forecast is only slightly better than that.`,
+    '<b>NOAA\'s rule of thumb:</b> a 5-day forecast is right about 90% of the time, a 7-day about 80%, a 10-day or longer only about half the time.',
+    `<b>A precip chance</b> is the chance of at least ${aMinTxt(0.01)} at this spot in that period (National Weather Service). Beyond about a week, a precip forecast is hardly better than the usual odds.`,
+    '<b>Days 8 to 10</b> give only a rough idea. <b>Days 11 to 16</b> can tell you at most whether it will be warmer or cooler than usual.',
+    `<b>Your spot is not the forecast's spot.</b> A forecast is made for a point on a grid, not your exact spot, and its accuracy is checked at airports. Highs fall about ${dT(3.4).toFixed(1)} ${u} for every 1,000 ft you go up (Weather Service measured average).`,
+    '<b>Weather Underground</b> uses the same forecast as The Weather Channel. In the accuracy comparisons found, it is one of the most accurate few. They are close to each other, and which one is first changes from month to month. Its link here is for another good forecast.',
+  ].map(x => `<div>${x}</div>`).join('');
+  $('fsrc').textContent = 'Sources: ForecastWatch 2005–2016 report (the temperature bars); NOAA EMC GEFS verification, 2025 (the precip bars, read from its charts); ECMWF evaluation, Haiden and others 2025 (the European limit); Bickel and others 2011 and Bickel and Kim 2008 (precip chance bias); NOAA NESDIS education page; National Weather Service "What is the chance of rain?" (its title); NWS lapse-rate study, western North Carolina. Full research with links: research\\WxForecastResearch_v04.md (2026-10-24).';
+}
+
+// ---------- Climate: the last week, month, 3, 6 and 12 months against 1991-2020 ----------
+const CWIN = [['7', 'Last 7 days'], ['30', 'Last 30 days'], ['90', 'Last 90 days'], ['182', 'Last 6 months'], ['365', 'Last 12 months']];   // 6 and 12 months: JG
+// which columns show (JG: "Climate data: add options for time columns to show"): on the Climate tab only (0.44: settings on the tab they change)
+const cwOn = k => !Array.isArray(S.cwin) || S.cwin.includes(k), CW = () => CWIN.filter(([k]) => cwOn(k));
+const cwBoxes = () => CWIN.map(([k, t]) => `<label class="ck"><input type="checkbox" data-cw="${k}"${cwOn(k) ? ' checked' : ''}>${t.replace('Last ', '')}</label>`).join(' ');
+document.addEventListener('change', e => { const c = e.target; if (!c.dataset || !('cw' in c.dataset)) return;
+  S.cwin = CWIN.map(([k]) => k).filter(k => k === c.dataset.cw ? c.checked : cwOn(k)); save(); refresh(); });
+function drawClim() {
+  const C = window.WXC;
+  if (!C) { $('cnote').textContent = 'No climate copy loaded.'; $('ct').innerHTML = ''; return; }
+  const any = Object.values(CLIM)[0];
+  $('cnote').textContent = `Average high, average low and total precip, beside the 1991–2020 average for the same dates. Through ${any ? any.through : '?'} (the archive runs a few days behind). Source: Open-Meteo Historical Weather API, copy of ${when(Date.parse(C.fetched))}.`;
+  const sgn = d => { const v = dT(d); return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(1); };
+  const tcell = (lbl, a, n) => { const d = a - n, c = d >= 1 ? 'warm' : d <= -1 ? 'cool' : ''; return `<div>${lbl} <span class="${c}">${sgn(d)}°</span> <span class="sec">(${T(Math.round(a))}° vs ${T(Math.round(n))}°)</span></div>`; };
+  const track = pct => `<span class="rtrack"><span class="fill" style="width:${Math.min(pct, 300) / 3}%"></span><span class="norm"></span>${pct > 300 ? '<span class="more">▶</span>' : ''}</span>`;
+  const rcell = (a, n) => { const pct = n > 0 ? Math.round(a / n * 100) : null;
+    return pct == null ? `<div>Precip ${amtTxt(a, 2)} <span class="sec">(normal: none)</span></div>`
+      : `<div>Precip <b>${pct}%</b> of normal${track(pct)}<span class="sec">${amtTxt(a, 2)} vs ${amtTxt(n, 2)}</span></div>`; };
+  let h = `<div class="ckey" style="grid-column:1 / -1">Precip bar: ${track(100)} the white mark is normal for those dates; blue past it is wetter than normal, short of it drier; ▶ more than 3 times normal.</div>`
+    + `<div class="ckey" style="grid-column:1 / -1">Show: ${cwBoxes()}</div>`
+    + `<div class="ckey" style="grid-column:1 / -1">Units: ${unitsCtl()}</div>`
+    + '<div class="h"></div>' + CW().map(([, t]) => `<div class="h">${t}</div>`).join('');
+  $('ct').style.gridTemplateColumns = `110px repeat(${Math.max(1, CW().length)}, minmax(110px, 1fr))`;
+  chosen().forEach(p => {
+    const c = CLIM[p.name];
+    if (!c) { h += `<div><b>${esc(p.name)}</b></div><div style="grid-column:span ${Math.max(1, CW().length)}">Climate not fetched. <button class="btn" data-clim="${esc(p.name)}">Fetch it</button></div>`; return; }
+    h += `<div><b>${esc(p.name)}</b></div>` + CW().map(([n]) => { const w = c.w[n];
+      if (!w) { const x = S.places.find(y => y.name === p.name);   // a copy made before 0.43
+        return `<div class="sec">Not in this copy yet.${x && x.lat ? ` <button class="btn" data-clim="${esc(p.name)}">Fetch again</button>` : ''}</div>`; }
+      return `<div>${tcell('High', w.hi, w.nhi)}${tcell('Low', w.lo, w.nlo)}${rcell(w.rain, w.nrain)}</div>`; }).join('');
+  });
+  $('ct').innerHTML = h;
+}
+$('ct').addEventListener('click', async e => { const b = e.target.closest('[data-clim]'); if (!b) return;
+  const x = S.places.find(y => y.name === b.dataset.clim); if (!x || !x.lat) return;
+  busy(b, 'Fetching', true);
+  try { x.clim = await fetchClimate(x.lat, x.lon); save(); joinAdded(); drawClim(); }
+  catch (err) { busy(b, 'Fetch it', false); b.insertAdjacentText('afterend', ' ' + err.message); } });
+
+// ---------- Options: each setting with a small live sample (R30) ----------
+const sel = (id, list, val) => `<select id="${id}">${list.map(o => `<option value="${o.k}"${o.k === val ? ' selected' : ''}>${o.name}</option>`).join('')}</select>`;
+const toggle = (id, what, on) => `<label class="ck"><input type="checkbox" id="${id}"${on ? ' checked' : ''}>${what}</label>`;   // JG: "Stop the ON stuff, just add checkboxes"
+// Units, on every tab whose numbers they change (Options, Explainer, Forecasting, Climate), kept in step
+const unitsCtl = () => `<select data-u="units" aria-label="Temperature unit">${UNITS.map(o => `<option value="${o.k}"${o.k === S.units ? ' selected' : ''}>${o.name}</option>`).join('')}</select> `
+  + `<select data-u="amt" aria-label="Precip amount unit">${AMTU.map(o => `<option value="${o.k}"${o.k === (MM() ? 'mm' : 'in') ? ' selected' : ''}>${o.name}</option>`).join('')}</select>`;
+document.addEventListener('change', e => { const c = e.target; if (!c.dataset || !c.dataset.u) return; S[c.dataset.u] = c.value; save(); refresh(); });
+function drawUnits() { ['xunits', 'funits'].forEach(id => { $(id).innerHTML = 'Units: ' + unitsCtl(); }); }
+function drawSets() {
+  const lc = lineColor(), wcls = S.which === 'both' ? '' : S.which;
+  const grid = `<div class="sample"><div class="t ${wcls}" style="grid-template-columns:34px 34px;--rh:18px;--line:${lc}">${'<div class="c" style="height:18px"></div>'.repeat(4)}</div></div>`;
+  const rows = [
+    ['Table type', sel('olayout', ORDER.map(v => ({ k: v, name: NAME(v) })), S.layout), ''],   // in step with the top row's chooser (0.47)
+    ['Days ahead', sel('oahead', AHEAD, String(ahead())), `<span class="sec">${ahead()} days from today; past days to the left</span>`],
+    ['Forecast time', sel('ftsel', Object.entries(FT_STYLES).map(([k, v]) => ({ k, name: `${k} ${v}` })), S.ft), '<span class="sec">Over the table: when the forecast was made, and when the next one is due. All five below; yellow outline = in use</span>'],
+    ...Object.entries(FT_STYLES).map(([k, v]) => [`${k} ${v}`, '<span></span>', ftSample(k)]),
+    ['Units', `<span>${unitsCtl()}</span>`, `<div class="sample">${sample('80px', sbox(shl(68, 45, '<span></span><span></span>')))}</div>`],
+    ['Cell lines', sel('lines', LINES, S.lines), grid],
+    ['Which lines', sel('which', WHICH, S.which), grid],
+    ['Precip shows', sel('rainshow', RAINSHOW, S.rainshow), sample('80px', sbox(shl(61, 47, `<span class="r big">${rainTxt(76, 0.12, S.rainshow)}</span><span></span>`)))],
+    ['Show precip from', `<span>${sel('rmin', RMIN, String(rMin()))} ${sel('amin', AMIN(), String(aMin()))}</span>`, `<span class="sec">a chance of ${rMin()}% or more${aMin() ? `, and ${aMinTxt(aMin())} or more` : ''}; below that the box stays clear</span>`],
+    ['Changes', toggle('tchg', 'Mark changes since the previous copy', S.changes), S.changes ? sample('80px', sbox(`<span class="hi">${T(66)}<span class="chg">${FAT.up}</span></span><span class="lo">${T(47)}</span><div class="l2"></div>`)) : ''],
+    ...(S.layout === 'E' ? [
+    ['F: temperature bar', toggle('ebar', 'The bar from low to high', EO().bar), eSample({ bar: true })],
+    ['F: warmest-high line', toggle('emax', 'A faint gray line across each row at that place\'s highest temperature', EO().maxline), eSample({ bar: true, maxline: true })],
+    ['F: precipitation', toggle('eprecip', 'The blue column: amount and chance', EO().precip), eSample({ precip: true })],
+    ['F: wind gusts', toggle('egust', 'The line at the right', EO().gust), eSample({ gust: true })],
+    ['F: usual range', toggle('eusual', 'Gray band: the usual high to low for the date (1991–2020)', EO().usual), eSample({ usual: true })],
+    ['F: comfortable', `<span>${toggle('ecomf', 'Yellow tint:', EO().comfort)} ${sel('ecl', [50, 55, 60, 65, 70].map(v => ({ k: String(v), name: v + '°F' })), String(EO().comfLo))} to ${sel('ech', [75, 80, 85, 90].map(v => ({ k: String(v), name: v + '°F' })), String(EO().comfHi))}</span>`, eSample({ comfort: true })],
+    ['F: fuzzier further out', toggle('efuzz', 'Faint ends: the typical miss for that many days ahead', EO().fuzz), eSample({ fuzz: true })],
+    ['F: previous forecast', toggle('eprev', 'Dashed line: the high in the previous copy (needs Changes)', EO().prev), eSample({ prev: true })],
+    ['F: when in the day', toggle('ehours', 'Ticks along the bottom: the hours with precip', EO().hours), eSample({ hours: true })],
+    ['F: best day', toggle('ebest', 'Yellow square: each place\'s best day ahead (rule not yet yours: temperature, then dry, then calm)', EO().best), eSample({ best: true })],
+    ['F: numbers', toggle('enums', 'High and low beside the bar', EO().nums), eSample({ nums: true })],
+    ] : []),
+  ];
+  $('sets').innerHTML = rows.map(([l, c, s]) => `<div class="set"><span class="lbl">${l}</span>${c}${s || '<span></span>'}</div>`).join('')
+    ;
+  $('olayout').onchange = () => { S.layout = $('olayout').value; save(); fillLayouts(); fillAhead(); refresh(); };
+  $('oahead').onchange = () => { S.ahead = $('oahead').value; save(); fillAhead(); refresh(); };
+  $('ftsel').onchange = () => { S.ft = $('ftsel').value; save(); refresh(); };
+  $('lines').onchange = () => { S.lines = $('lines').value; save(); refresh(); };
+  $('which').onchange = () => { S.which = $('which').value; save(); refresh(); };
+  $('rainshow').onchange = () => { S.rainshow = $('rainshow').value; save(); fillRain(); refresh(); };
+  $('rmin').onchange = () => { S.rainMin = +$('rmin').value; save(); refresh(); };
+  $('amin').onchange = () => { S.amtMin = +$('amin').value; save(); refresh(); };
+  $('tchg').onchange = () => { S.changes = $('tchg').checked; save(); refresh(); };
+  if (S.layout === 'E') {
+    const eset = (k, v) => { S.e = Object.assign({}, EO(), { [k]: v }); save(); refresh(); };
+    $('eusual').onchange = () => eset('usual', $('eusual').checked); $('ecomf').onchange = () => eset('comfort', $('ecomf').checked);
+    $('ecl').onchange = () => eset('comfLo', +$('ecl').value); $('ech').onchange = () => eset('comfHi', +$('ech').value);
+    $('efuzz').onchange = () => eset('fuzz', $('efuzz').checked); $('eprev').onchange = () => eset('prev', $('eprev').checked);
+    $('ehours').onchange = () => eset('hours', $('ehours').checked); $('ebest').onchange = () => eset('best', $('ebest').checked);
+    $('enums').onchange = () => eset('nums', $('enums').checked);
+    $('ebar').onchange = () => eset('bar', $('ebar').checked); $('emax').onchange = () => eset('maxline', $('emax').checked); $('eprecip').onchange = () => eset('precip', $('eprecip').checked);
+    $('egust').onchange = () => eset('gust', $('egust').checked);
+  }
+}
+// Save Profile (R35): a name, with the date and time recorded automatically
+const PROFILE_KEYS = ['layout', 'ahead', 'lines', 'which', 'rainshow', 'rainMin', 'amtMin', 'units', 'amt', 'cwin', 'changes', 'wu', 'places', 'e', 'ft'];
+function drawProfiles() {
+  $('plistp').innerHTML = S.profiles.map((p, i) => `<div class="row2" style="margin:3px 0"><button class="btn" data-load="${i}">Load</button><b>${esc(p.name)}</b><span class="sec">saved ${when(p.at)}</span></div>`).join('');
+}
+$('psave').addEventListener('click', () => {
+  const name = $('pname').value.trim(); if (!name) { $('pname').focus(); return; }
+  const set = {}; PROFILE_KEYS.forEach(k => { if (S[k] !== undefined) set[k] = JSON.parse(JSON.stringify(S[k])); });
+  const old = S.profiles.findIndex(p => p.name === name), rec = { name, at: Date.now(), set };
+  if (old >= 0) S.profiles[old] = rec; else S.profiles.push(rec);
+  save(); $('pname').value = ''; drawProfiles();
+});
+$('plistp').addEventListener('click', e => { const b = e.target.closest('[data-load]'); if (!b) return;
+  Object.assign(S, JSON.parse(JSON.stringify(S.profiles[+b.dataset.load].set))); save(); joinAdded(); fillLayouts(); fillAhead(); fillRain(); drawLocs(); refresh(); });
+// rating
+const rec = v => S.ratings[v] || (S.ratings[v] = { stars: 0, comment: '', ts: 0 });
+function showRating() {
+  const r = rec(S.layout);
+  $('lname').textContent = NAME(S.layout);
+  [...$('stars').children].forEach(b => { const on = +b.dataset.n <= r.stars; b.textContent = on ? '★' : '☆'; b.classList.toggle('lit', on); });
+  if (document.activeElement !== $('comment')) $('comment').value = r.comment;
+  if (document.activeElement !== $('rname')) $('rname').value = S.raterName || '';
+  $('stamp').textContent = !saveOk ? 'Not saved: this browser blocks storage' : r.ts && (r.stars || r.comment) ? `Saved ${when(r.ts)}, on this device only` : '';
+  const rated = ORDER.filter(v => { const x = S.ratings[v]; return x && (x.stars || x.comment); });
+  $('all').textContent = rated.length ? 'Your ratings: ' + rated.map(v => { const x = S.ratings[v]; return `${LETTER[v]} ${x.stars ? '★'.repeat(x.stars) : ''}${x.comment ? ' (commented)' : ''}`; }).join(' · ') : '';
+}
+$('stars').innerHTML = [1, 2, 3, 4, 5].map(n => `<button data-n="${n}" aria-label="${n} star${n > 1 ? 's' : ''}">☆</button>`).join('');
+$('stars').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; const r = rec(S.layout), n = +b.dataset.n;
+  r.stars = r.stars === n ? 0 : n; r.ts = Date.now(); save(); fillLayouts(); showRating(); });
+$('comment').addEventListener('input', () => { const r = rec(S.layout); r.comment = $('comment').value; r.ts = Date.now(); save(); showRating(); });
+$('rname').addEventListener('input', () => { S.raterName = $('rname').value; save(); });
+
+// a sample E box for Options and the Explainer: a showery day 3 days ahead, against the usual range
+const ESAMPLE = { hi: 66, lo: 44, pp: 70, q: 0.35, g: 24, past: false, nhi: 63, nlo: 38, prevHi: 71, miss: 3.9, best: true,
+  hrs: Array.from({ length: 24 }, (_, i) => ['', 0, i >= 12 && i <= 17 ? 70 : 5, 0, 0]) };
+function eSample(only) {   // with `only`, just that part switched on (and the bar), to show what it adds
+  const keep = S.e; if (only) S.e = Object.assign({}, EDEF, { bar: false, maxline: false, precip: false, gust: false, usual: false, comfort: false, fuzz: false, prev: false, hours: false, best: false, nums: false }, only, { comfLo: EO().comfLo, comfHi: EO().comfHi });
+  const svg = eSvg(Object.assign({}, ESAMPLE, { prevHi: (only ? only.prev : EO().prev) ? 71 : null }), { lo: 30, hi: 80, max: 74 });
+  S.e = keep;
+  return `<div class="sample"><div class="t" style="grid-template-columns:79px;--rh:54px;--line:#555"><div class="c g">${svg}</div></div></div>`;
+}
+// the Explainer's checkboxes set the same choices as Options
+$('key').addEventListener('change', e => { const c = e.target;
+  if (c.dataset.ek) S.e = Object.assign({}, EO(), { [c.dataset.ek]: c.checked }); else if ('chg' in c.dataset) S.changes = c.checked; else return;
+  save(); refresh(); });
+// ---------- About: This device (JG: "Yes, add it under About") ----------
+// Measured things are the foundation of the display; names are only reported (JG, of "adapt to those measurable things
+// rather than to the device's name": "this is the graphical foundation").
+const TV_RE = /SmartTV|SMART-TV|Tizen|Web0S|webOS|NetCast|BRAVIA|AFT[A-Z]|CrKey|Android TV|GoogleTV|HbbTV|Roku/i;
+let devHints = null, devHintsNo = false;   // Chrome's detailed answer (secure addresses only), asked for once; refused
+function devBrowser(ua) {
+  const m = (re, name) => { const r = ua.match(re); return r ? `${name} ${r[1]}` : null; };
+  return m(/EdgiOS\/([\d.]+)/, 'Edge for iPhone') || m(/CriOS\/([\d.]+)/, 'Chrome for iPhone') || m(/FxiOS\/([\d.]+)/, 'Firefox for iPhone')
+    || m(/Edg\/([\d.]+)/, 'Edge') || m(/OPR\/([\d.]+)/, 'Opera') || m(/SamsungBrowser\/([\d.]+)/, 'Samsung Internet')
+    || m(/Firefox\/([\d.]+)/, 'Firefox') || m(/Chrome\/([\d.]+)/, 'Chrome') || m(/Version\/([\d.]+).*Safari/, 'Safari') || 'Not recognized';
+}
+function devSystem(ua) {   // [what the basic description says, a note on how far to trust it]
+  let r;
+  if ((r = ua.match(/(iPhone|iPad).*? OS (\d+)_(\d+)/))) return [`${r[1]}, iOS ${r[2]}.${r[3]}`, r[2] === '18' && r[3] === '6'
+    ? 'Safari 26 and later report iOS 18.6 on every device, so the real version may be later. The model is never reported.' : 'The model is never reported.'];
+  if (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) return ['iPad (it reports itself as a Mac)', 'The model and the real iPadOS version are never reported.'];
+  if ((r = ua.match(/Android ([\d.]+)/))) return [`Android ${r[1]}`, r[1] === '10' && /Chrome\//.test(ua) ? 'Chrome reports Android 10 on every phone; the detailed answer below has the real one.' : ''];
+  if (/Windows NT 10/.test(ua)) return ['Windows 10 or 11', 'The basic description cannot tell them apart.'];
+  if (/Windows/.test(ua)) return ['Windows (older)', ''];
+  if (/CrOS/.test(ua)) return ['ChromeOS', ''];
+  if (/Mac OS X/.test(ua)) return ['Mac', 'Browsers report the same old macOS version on every Mac.'];
+  if (/Linux/.test(ua)) return ['Linux', ''];
+  return ['Not recognized', ''];
+}
+function devHintRows(h) {   // Chrome, Edge, Opera and Samsung Internet on a secure address
+  const rows = [], v = h.platformVersion || '', major = parseInt(v, 10);
+  let sys = h.platform || '';
+  if (sys === 'Windows' && v) sys = major >= 13 ? 'Windows 11' : major > 0 ? 'Windows 10' : 'Windows (older)';
+  else if (sys === 'macOS' || sys === 'Android') sys += ` ${v.replace(/(\.0)+$/, '')}`;
+  if (sys) rows.push(['System, detailed', sys]);
+  if (h.model) rows.push(['Model', h.model]);
+  const b = (h.fullVersionList || []).filter(x => !/Not.?A.?Brand|Chromium/i.test(x.brand));
+  if (b.length) rows.push(['Browser, detailed', b.map(x => `${x.brand} ${x.version}`).join(', ')]);
+  if (h.formFactors && h.formFactors.length) rows.push(['Kind, as the browser says', h.formFactors.join(', ')]);
+  if (h.architecture) rows.push(['Processor', `${h.architecture}${h.bitness ? ` ${h.bitness}-bit` : ''}`]);
+  return rows;
+}
+function devInsets() {   // the notch and home-bar margins, in page pixels: top, right, bottom, left
+  const p = document.createElement('div');
+  p.style.cssText = 'position:fixed;visibility:hidden;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)';
+  document.body.appendChild(p); const c = getComputedStyle(p);
+  const r = ['Top', 'Right', 'Bottom', 'Left'].map(k => parseFloat(c['padding' + k]) || 0); p.remove(); return r;
+}
+function devFont(f) {   // the size the browser or device would use for font f, in page pixels
+  const p = document.createElement('span'); p.style.cssText = `position:fixed;visibility:hidden;${f}`;
+  document.body.appendChild(p); const n = parseFloat(getComputedStyle(p).fontSize); p.remove(); return n;
+}
+function devPic(sw, sh, ww, wh, inset) {   // the screen and the window, to scale
+  const k = 120 / Math.max(sw, sh, ww, wh), W = Math.round(sw * k), H = Math.round(sh * k);
+  const x = Math.round(Math.max(0, Math.min(sw - ww, (window.screenX || 0) - (screen.availLeft || 0))) * k);
+  const y = Math.round(Math.max(0, Math.min(sh - wh, (window.screenY || 0) - (screen.availTop || 0))) * k);
+  const w = Math.round(Math.min(ww, sw) * k), h = Math.round(Math.min(wh, sh) * k), [it, ir, ib, il] = inset.map(n => n * k);
+  const band = (bx, by, bw, bh) => bw > 0 && bh > 0 ? `<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" fill="#555"/>` : '';
+  return `<svg width="${W + 150}" height="${H + 2}" role="img" aria-label="The screen, ${sw} by ${sh}, and the window, ${ww} by ${wh}, to scale">` +
+    `<rect x="1" y="1" width="${W}" height="${H}" fill="none" style="stroke:var(--sec)"/>` +
+    `<rect x="${x + 1}" y="${y + 1}" width="${w}" height="${h}" fill="#222" style="stroke:var(--lo)"/>` +
+    band(x + 1, y + 1, w, it) + band(x + 1, y + 1 + h - ib, w, ib) + band(x + 1, y + 1, il, h) + band(x + 1 + w - ir, y + 1, ir, h) +
+    `<text x="${W + 10}" y="14">Screen ${sw} × ${sh}</text><text x="${W + 10}" y="30" style="fill:var(--lo)">Window ${ww} × ${wh}</text>` +
+    `<text x="${W + 10}" y="46">page pixels</text>${inset.some(n => n) ? `<text x="${W + 10}" y="62">gray: notch, home bar</text>` : ''}</svg>`;
+}
+function drawDevice() {
+  if (!$('dev') || S.tab !== 'about') return;   // only while About is open; showTab draws it on opening
+  const ua = navigator.userAgent, mm = q => matchMedia(q).matches, yes = b => b ? 'Yes' : 'No';
+  const sw = screen.width, sh = screen.height, ww = window.innerWidth, wh = window.innerHeight, dpr = window.devicePixelRatio || 1;
+  const coarse = mm('(pointer: coarse)'), none = mm('(pointer: none)'), short = Math.min(sw, sh), inset = devInsets();
+  const kind = TV_RE.test(ua) ? 'TV' : coarse ? (short < 600 ? 'Phone' : 'Tablet') : none ? 'TV or other (no pointer)' : 'Computer';
+  const [sys, sysNote] = devSystem(ua), ori = screen.orientation ? screen.orientation.type : (ww > wh ? 'landscape' : 'portrait');
+  const rows = [
+    ['Kind', kind, 'Worked out from screen size and touch'],
+    ['Screen', `${sw} × ${sh} page pixels`],
+    ['Pixel density', `${+dpr.toFixed(2)} actual pixel${dpr === 1 ? '' : 's'} per page pixel (${Math.round(sw * dpr)} × ${Math.round(sh * dpr)} actual)`],
+    ['Window', `${ww} × ${wh} page pixels`],
+    ['Turned', /landscape/.test(ori) ? 'Sideways (landscape)' : 'Upright (portrait)'],
+    ['Pointing', coarse ? 'Finger' : none ? 'None (keys or a remote)' : 'Mouse or touchpad',
+      !coarse && mm('(any-pointer: coarse)') ? 'Also a touch screen' : navigator.maxTouchPoints ? `Up to ${navigator.maxTouchPoints} fingers at once` : ''],
+    ['Opened from the Home Screen', yes(mm('(display-mode: standalone)') || mm('(display-mode: fullscreen)') || navigator.standalone === true)],
+    ['Notch and home-bar margins', inset.some(n => n) ? `top ${inset[0]}, right ${inset[1]}, bottom ${inset[2]}, left ${inset[3]} page pixels` : 'None',
+      inset.some(n => n) ? '' : 'Or the browser already keeps the page clear of them'],
+    ['Dark mode', mm('(prefers-color-scheme: dark)') ? 'On' : 'Off', 'The device setting; WxTable is always dark'],
+    ['Reduce motion', mm('(prefers-reduced-motion: reduce)') ? 'On' : 'Off'],
+    ['More contrast', mm('(prefers-contrast: more)') || mm('(forced-colors: active)') ? 'On' : 'Off'],
+    ['Text size', `${devFont('font-size:medium')} page pixels`, 'The browser\'s text size setting; 16 is usual'],
+    ...(/iPhone|iPad|Macintosh/.test(ua) ? [['Apple text size', `${devFont('font:-apple-system-body')} page pixels`, 'The device\'s Text Size setting, where Safari reports it']] : []),
+    ['Internet', navigator.onLine ? 'Connected' : 'Not connected'],
+    ['Language, time zone', `${navigator.language}, ${Intl.DateTimeFormat().resolvedOptions().timeZone || 'not reported'}`],
+    ['Browser', devBrowser(ua)],
+    ['System', sys, sysNote],
+    ...(devHints ? devHintRows(devHints) : [['Detailed answer', navigator.userAgentData
+      ? (devHintsNo ? 'The browser did not give one' : window.isSecureContext ? 'Waiting for the browser' : 'Needs a secure (https) address') : 'This browser does not give one']]),
+  ];
+  $('devPic').innerHTML = devPic(sw, sh, ww, wh, inset);
+  $('dev').innerHTML = rows.map(([k, v, n]) => `<span class="k">${esc(k)}</span><span>${esc(v)}</span>${n ? `<span class="n">${esc(n)}</span>` : ''}`).join('') +
+    `<span class="ua">The browser's basic description: ${esc(ua)}</span>`;
+}
+if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues && window.isSecureContext)
+  navigator.userAgentData.getHighEntropyValues(['platformVersion', 'model', 'architecture', 'bitness', 'formFactors', 'fullVersionList'])
+    .then(h => { devHints = h; drawDevice(); }, () => { devHintsNo = true; drawDevice(); });
+['(prefers-color-scheme: dark)', '(prefers-reduced-motion: reduce)', '(prefers-contrast: more)', '(pointer: coarse)', '(display-mode: standalone)']
+  .forEach(q => { const l = matchMedia(q); if (l.addEventListener) l.addEventListener('change', drawDevice); });
+['resize', 'online', 'offline'].forEach(ev => window.addEventListener(ev, drawDevice));
+if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', drawDevice);
+
+function refresh() { drawUnits(); drawFt(); drawTable(); drawKey(); drawFcst(); drawClim(); drawSets(); drawProfiles(); showRating(); }
+const VERSION = '0.48', VERSION_DATE = '2026-10-30';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
+$('brand').textContent = `WxTable ${VERSION}`;
+$('aboutName').textContent = `WxTable v${VERSION} · ${VERSION_DATE}`;   // the Rydn format, as DoStack's About
+$('strip').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; save(); showTab(); });
+$('layout').addEventListener('change', () => { S.layout = $('layout').value; save(); fillAhead(); refresh(); showTab(); });
+$('ndays').addEventListener('change', () => { S.ahead = $('ndays').value; save(); refresh(); showTab(); });
+window.addEventListener('resize', () => fit(false));
+
+joinAdded(); fillLayouts(); fillAhead(); fillRain(); drawLocs(); refresh(); showTab();
+</script>
+</body></html>
