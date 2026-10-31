@@ -3,9 +3,11 @@
 <meta name="robots" content="noindex">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>WxTable 0.59</title>
+<title>WxTable 0.60</title>
 <style>
-/* WxTable 0.59 (2026-10-31): new users start on E Basic graphics (JG: "For new users, default to basic graphics");
+/* WxTable 0.60 (2026-10-31): a border line along the top of the table and a small gap above it, so the buttons and the
+   table do not run together (JG: "I meant a border line at the top of the table. Above this a small gap then the buttons").
+   0.59 (2026-10-31): new users start on E Basic graphics (JG: "For new users, default to basic graphics");
    the table's top line bold (JG: "Bold top line for the table").
    0.58 (2026-10-31): Apps we like on one line, with bullets between (JG: "Apps we like: (all in one line with
    bullets between them)").
@@ -204,7 +206,7 @@ a { color:var(--lo); }
 .t > .fband { height:calc(16px * var(--tk, 1)); font-size:10px; color:var(--sec); padding:2px 0 0 4px; white-space:nowrap; background:#111; }
 .t > .fband.fcorner { position:sticky; left:0; z-index:2; background:#000; color:#fff; }
 /* the table */
-.tw { overflow-x:auto; overflow-y:hidden; }
+.tw { overflow-x:auto; overflow-y:hidden; margin-top:6px; border-top:1px solid var(--dim); }   /* a gap, then a line along the top of the table (0.60) */
 .tw > .t { width:max-content; }   /* as wide as its columns plus the space after them, so it can scroll today to the left */
 .t { display:grid; }
 .t > div { border-right:1px solid var(--line); border-bottom:1px solid var(--line); box-sizing:border-box; overflow:hidden; }
@@ -924,7 +926,7 @@ function fit(scrollToToday) {   // columns keep one compact width, however many 
   // empty space after the last day, so the table can still open with today at the left edge when the days ahead are few
   const vw = tw.clientWidth || window.innerWidth;
   t.style.paddingRight = Math.max(0, vw - sz.nameW - ahead() * per * cw) + 'px';
-  const band = t.querySelector('.fband'), avail = window.innerHeight - $('strip').offsetHeight - $('livemsg').offsetHeight - $('ftrow').offsetHeight - Math.round(18 * TK) - (band ? band.offsetHeight : 0) - (tw.offsetHeight - tw.clientHeight), n = Math.max(1, chosen().length);
+  const band = t.querySelector('.fband'), avail = window.innerHeight - $('strip').offsetHeight - $('livemsg').offsetHeight - $('ftrow').offsetHeight - 7 - Math.round(18 * TK) - (band ? band.offsetHeight : 0) - (tw.offsetHeight - tw.clientHeight), n = Math.max(1, chosen().length);
   t.style.setProperty('--rh', Math.min(Math.round(sz.minRh * 1.5), Math.max(sz.minRh, Math.floor(avail / n))) + 'px');
   if (scrollToToday) tw.scrollLeft = (nd - ahead()) * per * cw;
   navState();
@@ -1542,7 +1544,7 @@ if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues && w
 if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', drawDevice);
 
 function refresh() { drawUnits(); drawFt(); drawTable(); drawKey(); drawFcst(); drawClim(); drawSets(); drawProfiles(); showRating(); }
-const VERSION = '0.59', VERSION_DATE = '2026-10-31';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
+const VERSION = '0.60', VERSION_DATE = '2026-10-31';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
 $('brand').textContent = `WxTable ${VERSION}`;
 $('aboutName').textContent = `WxTable v${VERSION} · ${VERSION_DATE}`;   // the Rydn format, as DoStack's About
 $('strip').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; save(); showTab(); });
