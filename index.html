@@ -3,9 +3,11 @@
 <meta name="robots" content="noindex">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>WxTable 0.49</title>
+<title>WxTable 0.50</title>
 <style>
-/* WxTable 0.49 (2026-10-31): one top row, with an Other dropdown for the tabs that do not fit; table cells that grow
+/* WxTable 0.50 (2026-10-31): the forecast time line at the bottom of the table or at the top, chosen on Options; bottom
+   unless chosen (JG: "New option: Forecast info at top or bottom of table, default is bottom").
+   0.49 (2026-10-31): one top row, with an Other dropdown for the tabs that do not fit; table cells that grow
    with the phone's text size (the Pixel 9a drew its text larger than the cells, cutting off their bottom line); arrow
    buttons instead of the sideways scrollbar; the page says in its head that it is dark, so a browser does not darken it
    again.
@@ -334,6 +336,8 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
    on Table only; one day per tap; Today when today is off the
    screen; a finger can still swipe the table */
 .ftrow { display:flex; align-items:center; gap:4px; }
+#pTable { display:flex; flex-direction:column; }
+#pTable.ftbottom .ftrow { order:2; }   /* the forecast time line under the table (0.50) */
 .ftrow .ft { flex:1 1 auto; min-width:0; }
 .nav { display:flex; align-items:center; gap:2px; }
 .ftrow .nav { flex:0 0 auto; padding:2px 4px 2px 0; }   /* the top row too narrow for them: at the end of the forecast line */
@@ -482,7 +486,7 @@ const TOUCH_MQ = matchMedia('(pointer: coarse)'), TOUCH_FORCE = /[?&]touch=1\b/.
 const setTouch = () => document.documentElement.classList.toggle('touch', TOUCH_FORCE == null ? TOUCH_MQ.matches : TOUCH_FORCE);
 const onTouchChange = () => { setTouch(); refresh(); fitStrip(); };   // addListener: Safari before 14 has no addEventListener here
 setTouch(); if (TOUCH_MQ.addEventListener) TOUCH_MQ.addEventListener('change', onTouchChange); else TOUCH_MQ.addListener(onTouchChange);
-let S = { layout: '0.09', lines: 'g88', which: 'both',   // JG: "Default is rows and columns, light gray"
+let S = { ftPos: 'bottom', layout: '0.09', lines: 'g88', which: 'both',   // JG: "Default is rows and columns, light gray"
  tab: 'table', rainshow: 'both', units: 'F', amt: 'in', changes: true, wu: false,
   ahead: '', rainMin: 20, amtMin: 0, e: null, ft: '2', cwin: null, places: null, profiles: [], sets: [], raterName: '', ratings: {} };
 try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s && typeof s === 'object') S = Object.assign(S, s, { ratings: Object.assign({}, s.ratings) }); } catch (e) { /* storage blocked: defaults */ }
@@ -768,6 +772,8 @@ function ftHtml(st) {
 }
 function drawFt() {   // the line over the table, in the style chosen under Options
   if (!FT_STYLES[S.ft]) S.ft = '2';
+  if (S.ftPos !== 'top') S.ftPos = 'bottom';
+  $('pTable').classList.toggle('ftbottom', S.ftPos === 'bottom');
   $('ft').innerHTML = ftHtml(S.ft);
 }
 function ftSample(k) {   // Options: each style as it looks; style 4 as a small band over four day headings
@@ -1219,7 +1225,8 @@ function drawSets() {
   const rows = [
     ['Table type', sel('olayout', ORDER.map(v => ({ k: v, name: NAME(v) })), S.layout), ''],   // in step with the top row's chooser (0.47)
     ['Days ahead', sel('oahead', AHEAD, String(ahead())), `<span class="sec">${ahead()} days from today; past days to the left</span>`],
-    ['Forecast time', sel('ftsel', Object.entries(FT_STYLES).map(([k, v]) => ({ k, name: `${k} ${v}` })), S.ft), '<span class="sec">Over the table: when the forecast was made, and when the next one is due. All five below; yellow outline = in use</span>'],
+    ['Forecast time', sel('ftsel', Object.entries(FT_STYLES).map(([k, v]) => ({ k, name: `${k} ${v}` })), S.ft), '<span class="sec">Under or over the table: when the forecast was made, and when the next one is due. All five below; yellow outline = in use</span>'],
+    ['Forecast time at', sel('ftpos', [{ k: 'bottom', name: 'Bottom of the table' }, { k: 'top', name: 'Top of the table' }], S.ftPos), '<span class="sec">Where the forecast time line goes, with the day arrows when they are there (style 4 is inside the table)</span>'],
     ...Object.entries(FT_STYLES).map(([k, v]) => [`${k} ${v}`, '<span></span>', ftSample(k)]),
     ['Units', `<span>${unitsCtl()}</span>`, `<div class="sample">${sample('80px', sbox(shl(68, 45, '<span></span><span></span>')))}</div>`],
     ['Cell lines', sel('lines', LINES, S.lines), grid],
@@ -1246,6 +1253,7 @@ function drawSets() {
   $('olayout').onchange = () => { S.layout = $('olayout').value; save(); fillLayouts(); fillAhead(); refresh(); };
   $('oahead').onchange = () => { S.ahead = $('oahead').value; save(); fillAhead(); refresh(); };
   $('ftsel').onchange = () => { S.ft = $('ftsel').value; save(); refresh(); };
+  $('ftpos').onchange = () => { S.ftPos = $('ftpos').value; save(); refresh(); };
   $('lines').onchange = () => { S.lines = $('lines').value; save(); refresh(); };
   $('which').onchange = () => { S.which = $('which').value; save(); refresh(); };
   $('rainshow').onchange = () => { S.rainshow = $('rainshow').value; save(); fillRain(); refresh(); };
@@ -1412,7 +1420,7 @@ if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues && w
 if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', drawDevice);
 
 function refresh() { drawUnits(); drawFt(); drawTable(); drawKey(); drawFcst(); drawClim(); drawSets(); drawProfiles(); showRating(); }
-const VERSION = '0.49', VERSION_DATE = '2026-10-31';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
+const VERSION = '0.50', VERSION_DATE = '2026-10-31';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
 $('brand').textContent = `WxTable ${VERSION}`;
 $('aboutName').textContent = `WxTable v${VERSION} · ${VERSION_DATE}`;   // the Rydn format, as DoStack's About
 $('strip').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; save(); showTab(); });
