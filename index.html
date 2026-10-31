@@ -3,9 +3,11 @@
 <meta name="robots" content="noindex">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>WxTable 0.60</title>
+<title>WxTable 0.61</title>
 <style>
-/* WxTable 0.60 (2026-10-31): a border line along the top of the table and a small gap above it, so the buttons and the
+/* WxTable 0.61 (2026-10-31): Climate has a Year to date column, January 1 through the last archived day, with its own
+   Show checkbox (JG: "For climate, add YTD option"); copy data\wx_climate_t12_2026-10-31.js.
+   0.60 (2026-10-31): a border line along the top of the table and a small gap above it, so the buttons and the
    table do not run together (JG: "I meant a border line at the top of the table. Above this a small gap then the buttons").
    0.59 (2026-10-31): new users start on E Basic graphics (JG: "For new users, default to basic graphics");
    the table's top line bold (JG: "Bold top line for the table").
@@ -485,7 +487,7 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
 <script>window.WXP = window.WXT;   // the previous copy, for "changed since"</script>
 <script src="data/wx_snapshot_t_2026-10-29.js"></script>
 <script src="data/wx_alerts_t_2026-10-29.js"></script>
-<script src="data/wx_climate_t12_2026-10-30.js"></script>   <!-- 7, 30, 90 days, 6 and 12 months -->
+<script src="data/wx_climate_t12_2026-10-31.js"></script>   <!-- 7, 30, 90 days, 6 and 12 months, year to date -->
 <script src="data/wx_normals_t_2026-10-29.js"></script>
 <script src="data/wx_runs_2026-10-29.js"></script>
 <script src="wxt_alerts_v03.js"></script>
@@ -1086,7 +1088,7 @@ async function fetchAlerts(lat, lon) {      // National Weather Service, as fetc
   const keep = ['event', 'severity', 'onset', 'effective', 'ends', 'expires', 'headline'];
   return (j.features || []).map(f => Object.fromEntries(keep.map(k => [k, f.properties[k]])));
 }
-async function fetchClimate(lat, lon) {     // as data\fetch_climate_t.py: last 7, 30, 90 days, 6 and 12 months against 1991-2020
+async function fetchClimate(lat, lon) {     // as data\fetch_climate_t.py: last 7, 30, 90 days, 6 and 12 months, year to date, against 1991-2020
   const api = (s, e) => `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${s}&end_date=${e}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&temperature_unit=fahrenheit&precipitation_unit=inch&timezone=auto`;
   const ymd = ms => new Date(ms).toISOString().slice(0, 10), now = Date.now();
   const a = (await getJson(api(ymd(now - 380 * 864e5), ymd(now - 864e5)))).daily;
@@ -1095,8 +1097,9 @@ async function fetchClimate(lat, lon) {     // as data\fetch_climate_t.py: last 
   b.time.forEach((t, i) => { const md = t.slice(5), hi = b.temperature_2m_max[i], lo = b.temperature_2m_min[i], p = b.precipitation_sum[i];
     if (md === '02-29' || hi == null || lo == null || p == null) return; const s = acc[md] || (acc[md] = [0, 0, 0, 0]); s[0] += hi; s[1] += lo; s[2] += p; s[3]++; });
   const w = {};
-  CWIN.forEach(([k]) => { const n = +k, win = rows.slice(-n), nd = win.map(r => acc[r[0].slice(5)]).filter(Boolean), avg = f => f / win.length;
-    w[n] = { from: win[0][0], to: win[win.length - 1][0], hi: rnd(avg(win.reduce((s, r) => s + r[1], 0)), 1), nhi: rnd(nd.reduce((s, x) => s + x[0] / x[3], 0) / nd.length, 1),
+  const yr = rows[rows.length - 1][0].slice(0, 4);   // year to date: January 1 of the last archived day's year
+  CWIN.forEach(([k]) => { const win = k === 'ytd' ? rows.filter(r => r[0].slice(0, 4) === yr) : rows.slice(-k), nd = win.map(r => acc[r[0].slice(5)]).filter(Boolean), avg = f => f / win.length;
+    w[k] = { from: win[0][0], to: win[win.length - 1][0], hi: rnd(avg(win.reduce((s, r) => s + r[1], 0)), 1), nhi: rnd(nd.reduce((s, x) => s + x[0] / x[3], 0) / nd.length, 1),
       lo: rnd(avg(win.reduce((s, r) => s + r[2], 0)), 1), nlo: rnd(nd.reduce((s, x) => s + x[1] / x[3], 0) / nd.length, 1),
       rain: rnd(win.reduce((s, r) => s + r[3], 0), 2), nrain: rnd(nd.reduce((s, x) => s + x[2] / x[3], 0), 2) }; });
   return { through: rows[rows.length - 1][0], w };
@@ -1290,8 +1293,8 @@ function drawFcst() {
   $('fsrc').textContent = 'Sources: ForecastWatch 2005–2016 report (the temperature bars); NOAA EMC GEFS verification, 2025 (the precip bars, read from its charts); ECMWF evaluation, Haiden and others 2025 (the European limit); Bickel and others 2011 and Bickel and Kim 2008 (precip chance bias); NOAA NESDIS education page; National Weather Service "What is the chance of rain?" (its title); NWS lapse-rate study, western North Carolina. Full research with links: research\\WxForecastResearch_v04.md (2026-10-24).';
 }
 
-// ---------- Climate: the last week, month, 3, 6 and 12 months against 1991-2020 ----------
-const CWIN = [['7', 'Last 7 days'], ['30', 'Last 30 days'], ['90', 'Last 90 days'], ['182', 'Last 6 months'], ['365', 'Last 12 months']];   // 6 and 12 months: JG
+// ---------- Climate: the last week, month, 3, 6 and 12 months and the year to date against 1991-2020 ----------
+const CWIN = [['7', 'Last 7 days'], ['30', 'Last 30 days'], ['90', 'Last 90 days'], ['182', 'Last 6 months'], ['365', 'Last 12 months'], ['ytd', 'Year to date']];   // 6 and 12 months, year to date: JG
 // which columns show (JG: "Climate data: add options for time columns to show"): on the Climate tab only (0.44: settings on the tab they change)
 const cwOn = k => !Array.isArray(S.cwin) || S.cwin.includes(k), CW = () => CWIN.filter(([k]) => cwOn(k));
 const cwBoxes = () => CWIN.map(([k, t]) => `<label class="ck"><input type="checkbox" data-cw="${k}"${cwOn(k) ? ' checked' : ''}>${t.replace('Last ', '')}</label>`).join(' ');
@@ -1544,7 +1547,7 @@ if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues && w
 if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', drawDevice);
 
 function refresh() { drawUnits(); drawFt(); drawTable(); drawKey(); drawFcst(); drawClim(); drawSets(); drawProfiles(); showRating(); }
-const VERSION = '0.60', VERSION_DATE = '2026-10-31';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
+const VERSION = '0.61', VERSION_DATE = '2026-10-31';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
 $('brand').textContent = `WxTable ${VERSION}`;
 $('aboutName').textContent = `WxTable v${VERSION} · ${VERSION_DATE}`;   // the Rydn format, as DoStack's About
 $('strip').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; save(); showTab(); });
