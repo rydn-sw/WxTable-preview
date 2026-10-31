@@ -3,9 +3,11 @@
 <meta name="robots" content="noindex">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>WxTable 0.55</title>
+<title>WxTable 0.56</title>
 <style>
-/* WxTable 0.55 (2026-10-31): About, Apps we like, above Data: AirNow, Watch Duty, MyRadar.
+/* WxTable 0.56 (2026-10-31): live data (JG: "I want a LIVE prototype"; "Ready for live data"): the forecast, alerts
+   and model run times fetched when the page opens; the bundled files only when there is no connection.
+   0.55 (2026-10-31): About, Apps we like, above Data: AirNow, Watch Duty, MyRadar.
    0.54 (2026-10-31): a paragraph break before "Great for" in the About intro (JG: "Paragraph break at
    "Great for"").
    0.53 (2026-10-31): JG's sentences at the end of the About intro ("Great for travelers, ...").
@@ -357,6 +359,8 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
 .ftrow .nav { flex:0 0 auto; padding:2px 4px 2px 0; }   /* the top row too narrow for them: at the end of the forecast line */
 .nav button { font-size:12px; padding:2px 8px; }
 .nav button:disabled { opacity:.3; cursor:default; }
+.livemsg { padding:2px 6px; font-size:12px; color:var(--sec); }   /* live data (0.56) */
+.livemsg.warn { color:#000; background:var(--hi); font-weight:600; }
 #tprobe { position:absolute; top:0; left:0; visibility:hidden; font-size:100px; line-height:1; pointer-events:none; }   /* text scale (0.49) */
 .tw { scrollbar-width:none; }
 .tw::-webkit-scrollbar { display:none; }
@@ -376,6 +380,7 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
   <button data-tab="about">About</button>
   <select id="other" aria-label="Other tabs" hidden></select>
 </div>
+<div class="livemsg" id="livemsg" hidden></div>
 
 <div id="pLocs" class="pane" hidden>
   <h2>Add a location</h2>
@@ -478,6 +483,90 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
 <script src="data/wx_runs_2026-10-29.js"></script>
 <script src="wxt_alerts_v03.js"></script>
 <script>
+// 0.56: live data (JG: "I want a LIVE prototype"; "Ready for live data"). Before the main script starts, ask Open-Meteo for the
+// forecast of every place (one request), the National Weather Service for each place's alerts, and Open-Meteo for the model
+// run times; then start the main script (kept as text in #main) exactly as before. The bundled files above stay as the
+// fallback. Each request gives up after 10 s. Kept on this device ('wxtable_live_v1'): the last full forecast, for use with
+// no connection, and the days of the forecast before it, for the change arrows (moved to "before" once at least an hour old).
+(async function () {
+  const KEY = 'wxtable_proto_v1', LIVE = 'wxtable_live_v1', LIMIT = 10000, HOUR = 3600e3;
+  const msg = document.getElementById('livemsg');
+  const say = (t, warn) => { msg.textContent = t; msg.hidden = !t; msg.classList.toggle('warn', !!warn); };
+  const read = k => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } };
+  const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
+  const pad = n => String(n).padStart(2, '0');
+  const when = ms => { const d = new Date(ms), h = d.getHours(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${h % 12 || 12}:${pad(d.getMinutes())} ${h < 12 ? 'AM' : 'PM'}`; };
+  const offStr = s => `${s < 0 ? '-' : '+'}${pad(Math.floor(Math.abs(s) / 3600))}:${pad(Math.floor(Math.abs(s) % 3600 / 60))}`;
+  const isoNow = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}${offStr(-d.getTimezoneOffset() * 60)}`; };
+  const rnd = (v, n) => v == null ? null : n ? Math.round(v * 10 ** n) / 10 ** n : Math.round(v);
+  async function get(url, opts) {
+    const c = new AbortController(), t = setTimeout(() => c.abort(), LIMIT);
+    try { const r = await fetch(url, Object.assign({ signal: c.signal }, opts)); if (!r.ok) throw new Error('the server answered ' + r.status); return await r.json(); }
+    finally { clearTimeout(t); }
+  }
+  let started = false;   // the main script starts once, whatever happens below
+  const start = () => { if (started) return; started = true; const s = document.createElement('script'); s.textContent = document.getElementById('main').textContent; document.body.appendChild(s); };
+  try {
+
+  const BUNDLED = window.WXT, S = read(KEY) || {}, L = read(LIVE) || {};
+  const added = (Array.isArray(S.places) ? S.places : []).filter(x => x && x.wx && Number.isFinite(+x.lat) && Number.isFinite(+x.lon) && x.lat !== '' && x.lon !== '' && !x.del);
+  const places = BUNDLED.places.map(p => ({ name: p.name, note: p.note, lat: p.lat, lon: p.lon })).concat(added.map(x => ({ name: x.name, lat: x.lat, lon: x.lon, x })));
+  say('Getting the latest forecast…');
+  const fx = 'https://api.open-meteo.com/v1/forecast?latitude=' + places.map(p => p.lat).join(',') + '&longitude=' + places.map(p => p.lon).join(',')
+    + '&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_gusts_10m_max,weather_code'
+    + '&hourly=temperature_2m,precipitation_probability,wind_gusts_10m,precipitation'
+    + '&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&past_days=7&forecast_days=16';
+  const KEEP = ['event', 'severity', 'urgency', 'certainty', 'onset', 'effective', 'ends', 'expires', 'headline', 'senderName', 'areaDesc'];
+  const MODELS = [['ncep_hrrr_conus', 'HRRR'], ['ncep_nbm_conus', 'NBM'], ['ncep_gfs013', 'GFS']];
+  const [F, A, R] = await Promise.all([
+    get(fx).then(d => Array.isArray(d) ? d : [d]).catch(e => e),
+    Promise.allSettled(places.map(p => get(`https://api.weather.gov/alerts/active?point=${(+p.lat).toFixed(4)},${(+p.lon).toFixed(4)}`, { headers: { Accept: 'application/geo+json' } })
+      .then(j => (j.features || []).map(f => Object.fromEntries(KEEP.map(k => [k, f.properties[k] ?? null])))))),
+    Promise.allSettled(MODELS.map(([k]) => get(`https://api.open-meteo.com/data/${k}/static/meta.json`))),
+  ]);
+  const now = Date.now(), fetched = isoNow(), notes = [];
+
+  if (Array.isArray(F) && F.length === places.length && F.every(d => d && d.daily && d.hourly)) {
+    const D = F.map(d => ({ elevFt: Math.round((d.elevation || 0) * 3.28084), offset: offStr(d.utc_offset_seconds || 0),
+      days: d.daily.time.map((t, i) => [t, rnd(d.daily.temperature_2m_max[i]), rnd(d.daily.temperature_2m_min[i]), d.daily.precipitation_probability_max[i] ?? 0,
+        rnd(d.daily.precipitation_sum[i], 2), rnd(d.daily.wind_gusts_10m_max[i]), d.daily.weather_code ? d.daily.weather_code[i] : null]),
+      hours: d.hourly.time.map((t, i) => [t, rnd(d.hourly.temperature_2m[i]), d.hourly.precipitation_probability[i], rnd(d.hourly.wind_gusts_10m[i]), rnd(d.hourly.precipitation[i], 2)]) }));
+    const n = BUNDLED.places.length;
+    window.WXT = { fetched, source: 'Open-Meteo', pastDays: 7, live: true,
+      places: places.slice(0, n).map((p, i) => ({ name: p.name, note: p.note, lat: p.lat, lon: p.lon, elevFt: D[i].elevFt, days: D[i].days, hours: D[i].hours })) };
+    added.forEach((x, j) => { const d = D[n + j]; x.wx = { fetched: new Date(now).toISOString(), offset: d.offset, elevFt: d.elevFt, days: d.days, hours: d.hours }; });
+    // the change arrows compare with the forecast before this one, once that one is at least an hour old
+    const slim = { fetched, places: places.map((p, i) => ({ name: p.name, days: D[i].days })) };
+    if (L.cur && now - Date.parse(L.cur.fetched) >= HOUR) L.prev = L.cur;
+    L.cur = slim; L.last = { wxt: window.WXT };
+    if (!write(LIVE, L)) { delete L.last; write(LIVE, L); }   // too big to keep: keep the arrows' copies only
+  } else {
+    const why = F instanceof Error ? (F.name === 'AbortError' ? 'no answer in 10 seconds' : F.message) : 'an incomplete answer';
+    if (L.last && L.last.wxt) { window.WXT = Object.assign({}, L.last.wxt, { live: false }); notes.push(`No new forecast (${why}): showing the forecast from ${when(Date.parse(L.last.wxt.fetched))}`); }
+    else notes.push(`No new forecast (${why}): showing a saved copy from ${when(Date.parse(BUNDLED.fetched))}`);
+  }
+  window.WXP = L.prev || { fetched: null, places: [] };
+
+  // a place whose check failed keeps its last known alerts, so a warning does not vanish with a slow answer
+  const ok = A.filter(a => a.status === 'fulfilled').length, known = L.alerts || {}, n = BUNDLED.places.length;
+  places.forEach((p, i) => { if (A[i].status === 'fulfilled') known[p.name] = A[i].value; });
+  if (ok) { L.alerts = known; L.alertsAt = fetched; write(LIVE, L); }
+  if (ok || L.alertsAt) {
+    window.WXA = { fetched: ok ? fetched : L.alertsAt, source: 'National Weather Service', places: places.slice(0, n).map(p => ({ name: p.name, alerts: known[p.name] || [] })) };
+    added.forEach((x, j) => { if (A[n + j].status === 'fulfilled') x.alerts = A[n + j].value; });
+    if (!ok) notes.push('Alerts could not be checked: showing the last known alerts, from ' + when(Date.parse(L.alertsAt)));
+    else if (ok < places.length) notes.push(`Alerts could not be checked for ${places.length - ok} of ${places.length} places: showing their last known alerts`);
+  } else notes.push('Alerts could not be checked: showing a saved copy from ' + when(Date.parse(window.WXA.fetched)));
+  if (R.every(r => r.status === 'fulfilled'))
+    window.WXR = { fetched, source: 'Open-Meteo model metadata', models: Object.fromEntries(MODELS.map(([k, name], i) => { const m = R[i].value;
+      return [name, { key: k, init: m.last_run_initialisation_time, avail: m.last_run_availability_time, modified: m.last_run_modification_time, every: m.update_interval_seconds, end: m.data_end_time }]; })) };
+  if (added.length) write(KEY, S);   // the added places' new forecasts, before the main script reads the settings
+  say(notes.join('. '), notes.length > 0);
+  } catch (e) { say('Could not get the latest forecast (' + e.message + '): showing what this device has', true); }
+  finally { start(); }
+})();
+</script>
+<script type="text/plain" id="main">
 // 0.5 s yellow press-flash on every button (house style)
 document.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; b.classList.add('flash'); setTimeout(() => b.classList.remove('flash'), 500); }, true);
 
@@ -830,7 +919,7 @@ function fit(scrollToToday) {   // columns keep one compact width, however many 
   // empty space after the last day, so the table can still open with today at the left edge when the days ahead are few
   const vw = tw.clientWidth || window.innerWidth;
   t.style.paddingRight = Math.max(0, vw - sz.nameW - ahead() * per * cw) + 'px';
-  const band = t.querySelector('.fband'), avail = window.innerHeight - $('strip').offsetHeight - $('ftrow').offsetHeight - Math.round(18 * TK) - (band ? band.offsetHeight : 0) - (tw.offsetHeight - tw.clientHeight), n = Math.max(1, chosen().length);
+  const band = t.querySelector('.fband'), avail = window.innerHeight - $('strip').offsetHeight - $('livemsg').offsetHeight - $('ftrow').offsetHeight - Math.round(18 * TK) - (band ? band.offsetHeight : 0) - (tw.offsetHeight - tw.clientHeight), n = Math.max(1, chosen().length);
   t.style.setProperty('--rh', Math.min(Math.round(sz.minRh * 1.5), Math.max(sz.minRh, Math.floor(avail / n))) + 'px');
   if (scrollToToday) tw.scrollLeft = (nd - ahead()) * per * cw;
   navState();
@@ -1162,7 +1251,7 @@ function drawKey() {
     k(past, 'Past days', `dimmed, with a slanted gray heading: scroll the table left to see them. They show what happened, with the precip that fell in ${MM() ? 'millimeters' : 'inches'}.`);
   }
   $('key').innerHTML = items.join('');
-  $('src').textContent = `Forecast: Open-Meteo, copy of ${when(Date.parse(W.fetched))}; previous copy ${when(Date.parse(window.WXP.fetched))}. Alerts: National Weather Service, ${when(Date.parse(window.WXA.fetched))}. Fixed copies for this prototype: they do not update by themselves; a new copy is fetched when JG asks. Choices stay on this device; sync is not built yet.`;
+  $('src').textContent = `Forecast: Open-Meteo, ${W.live ? 'fetched' : 'saved copy of'} ${when(Date.parse(W.fetched))}; ${window.WXP.fetched ? `change arrows against the forecast of ${when(Date.parse(window.WXP.fetched))}` : 'no earlier forecast on this device yet, so no change arrows'}. Alerts: National Weather Service, ${when(Date.parse(window.WXA.fetched))}. ${W.live ? 'Fetched when the page opens; climate and normals are saved copies.' : 'A saved copy: there was no connection when the page opened.'} Choices stay on this device; sync is not built yet.`;
 }
 
 // ---------- Forecasting: what the research found (research\WxForecastResearch_v04.md) ----------
@@ -1447,7 +1536,7 @@ if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues && w
 if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', drawDevice);
 
 function refresh() { drawUnits(); drawFt(); drawTable(); drawKey(); drawFcst(); drawClim(); drawSets(); drawProfiles(); showRating(); }
-const VERSION = '0.55', VERSION_DATE = '2026-10-31';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
+const VERSION = '0.56', VERSION_DATE = '2026-10-31';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
 $('brand').textContent = `WxTable ${VERSION}`;
 $('aboutName').textContent = `WxTable v${VERSION} · ${VERSION_DATE}`;   // the Rydn format, as DoStack's About
 $('strip').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; save(); showTab(); });
