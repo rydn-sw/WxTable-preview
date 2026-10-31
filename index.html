@@ -3,9 +3,10 @@
 <meta name="robots" content="noindex">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>WxTable 0.52</title>
+<title>WxTable 0.53</title>
 <style>
-/* WxTable 0.52 (2026-10-31): on Climate, everything but the heading below the table: the precip bar key, the Show
+/* WxTable 0.53 (2026-10-31): JG's sentences at the end of the About intro ("Great for travelers, ...").
+   0.52 (2026-10-31): on Climate, everything but the heading below the table: the precip bar key, the Show
    checkboxes, Units and the notes (JG: "Everything needs to go BELOW the table, including the checkboxes"); the heading
    ends "See key below the table". Locations tightened (JG: "The location tab is mostly blank space: we need to tighten
    this up"): the add controls on one row, Near me and the WU links on one row, the places in as many columns as fit,
@@ -446,7 +447,7 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
 </div>
 <div id="pAbout" class="pane" hidden>
   <h2 id="aboutName"></h2>
-  <div style="max-width:640px">Remember those weather tables in the back of the newspaper, which show weather by cities? Now you can create your own for your favorite places. Where next on the road? Track your options with fast visual scanning of trends and comparisons. See what just changed, and when the next forecast is expected.</div>
+  <div style="max-width:640px">Remember those weather tables in the back of the newspaper, which show weather by cities? Now you can create your own for your favorite places. Where next on the road? Track your options with fast visual scanning of trends and comparisons. See what just changed, and when the next forecast is expected. Great for travelers, drivers, flight crews, extended families, dispatch centers, ops centers, and more! Show it on your phone, tablet, computer, TV, or the Big Board. Excellent use for older devices sitting in a drawer.</div>
   <h2>Feedback</h2>
   <div style="max-width:640px">Your feedback, comments, and questions are welcome! We would love to hear how you used WxTable in your journeys.<br><a href="mailto:support@rydnsoftware.com">support@rydnsoftware.com</a></div>
   <h2>Website with more great apps for the road, and other uses too</h2>
@@ -1438,7 +1439,7 @@ if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues && w
 if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', drawDevice);
 
 function refresh() { drawUnits(); drawFt(); drawTable(); drawKey(); drawFcst(); drawClim(); drawSets(); drawProfiles(); showRating(); }
-const VERSION = '0.52', VERSION_DATE = '2026-10-31';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
+const VERSION = '0.53', VERSION_DATE = '2026-10-31';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
 $('brand').textContent = `WxTable ${VERSION}`;
 $('aboutName').textContent = `WxTable v${VERSION} · ${VERSION_DATE}`;   // the Rydn format, as DoStack's About
 $('strip').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; save(); showTab(); });
