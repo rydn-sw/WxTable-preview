@@ -3,9 +3,12 @@
 <meta name="robots" content="noindex">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>WxTable 0.61</title>
+<title>WxTable 0.62</title>
 <style>
-/* WxTable 0.61 (2026-10-31): Climate has a Year to date column, January 1 through the last archived day, with its own
+/* WxTable 0.62 (2026-10-31): places outside the US (JG: "What about outside the US?"; "Yes, open it up"): search
+   finds towns in any country ("town, state" or "town, country"); the National Weather Service covers only the US, so a
+   place it answers "out of bounds" (400) for is marked "no alerts outside the US" and not asked again.
+   0.61 (2026-10-31): Climate has a Year to date column, January 1 through the last archived day, with its own
    Show checkbox (JG: "For climate, add YTD option"); copy data\wx_climate_t12_2026-10-31.js.
    0.60 (2026-10-31): a border line along the top of the table and a small gap above it, so the buttons and the
    table do not run together (JG: "I meant a border line at the top of the table. Above this a small gap then the buttons").
@@ -396,7 +399,7 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
 <div id="pLocs" class="pane" hidden>
   <h2>Add a location</h2>
   <div class="row2">
-    <input type="search" id="q" placeholder="Search: town, state (e.g. Moab, UT)" autocomplete="off" aria-label="Search for a town">
+    <input type="search" id="q" placeholder="Search: town, state or country" autocomplete="off" aria-label="Search for a town">
     <button class="btn" id="gps">Use GPS</button>
     <input type="text" id="paste" placeholder="Paste a position (latitude, longitude)" autocomplete="off" aria-label="Paste a position">
     <button class="info" id="pinfo" title="Paste the latitude and longitude of a place, copied from Google Maps, a GPS app or a website. Examples: 35.084, -106.651 | 35.084 N 106.651 W | 35°05'02&quot;N 106°39'04&quot;W | a Google Maps link with @35.084,-106.651">i</button>
@@ -475,7 +478,7 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
   <h2>Apps we like</h2>
   <div style="max-width:640px">Smoke: <a href="https://www.airnow.gov/" target="_blank" rel="noopener">AirNow</a> &bull; Wildfires with county alerts you set: <a href="https://www.watchduty.org/" target="_blank" rel="noopener">Watch Duty</a> &bull; Radar with flood alerts: <a href="https://myradar.com/" target="_blank" rel="noopener">MyRadar</a></div>
   <h2>Data</h2>
-  <div class="sec" style="font-size:13px;max-width:640px">Forecasts and past days: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Weather data by Open-Meteo.com</a> (free for non-commercial use, with credit). Weather Service alerts: National Weather Service, api.weather.gov (public domain). The usual weather for each date, and the Climate tab: Open-Meteo Historical Weather API, 1991–2020. Forecast accuracy (Forecasting tab): WxTable's own research, research\WxForecastResearch_v04.md, 2026-10-24.</div>
+  <div class="sec" style="font-size:13px;max-width:640px">Forecasts and past days: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Weather data by Open-Meteo.com</a> (free for non-commercial use, with credit). Weather Service alerts: National Weather Service, api.weather.gov (public domain); US only, so places elsewhere show none. The usual weather for each date, and the Climate tab: Open-Meteo Historical Weather API, 1991–2020. Forecast accuracy (Forecasting tab): WxTable's own research, research\WxForecastResearch_v04.md, 2026-10-24.</div>
   <h2>This device</h2>   <!-- at the end of About (JG, 2026-10-30) -->
   <div class="sec" style="font-size:13px;max-width:640px">What this browser reports about the device, and what the page can measure. WxTable adapts to the measured things (size, touch, settings), not to the device's name. It updates when you turn the device or change the window.</div>
   <div id="devPic" class="devpic"></div>
@@ -510,7 +513,7 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
   const rnd = (v, n) => v == null ? null : n ? Math.round(v * 10 ** n) / 10 ** n : Math.round(v);
   async function get(url, opts) {
     const c = new AbortController(), t = setTimeout(() => c.abort(), LIMIT);
-    try { const r = await fetch(url, Object.assign({ signal: c.signal }, opts)); if (!r.ok) throw new Error('the server answered ' + r.status); return await r.json(); }
+    try { const r = await fetch(url, Object.assign({ signal: c.signal }, opts)); if (!r.ok) throw Object.assign(new Error('the server answered ' + r.status), { status: r.status }); return await r.json(); }
     finally { clearTimeout(t); }
   }
   let started = false;   // the main script starts once, whatever happens below
@@ -529,8 +532,11 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
   const MODELS = [['ncep_hrrr_conus', 'HRRR'], ['ncep_nbm_conus', 'NBM'], ['ncep_gfs013', 'GFS']];
   const [F, A, R] = await Promise.all([
     get(fx).then(d => Array.isArray(d) ? d : [d]).catch(e => e),
-    Promise.allSettled(places.map(p => get(`https://api.weather.gov/alerts/active?point=${(+p.lat).toFixed(4)},${(+p.lon).toFixed(4)}`, { headers: { Accept: 'application/geo+json' } })
-      .then(j => (j.features || []).map(f => Object.fromEntries(KEEP.map(k => [k, f.properties[k] ?? null])))))),
+    // outside the US the Weather Service answers 400 ("out of bounds"): no alerts there, and that place is not asked again
+    Promise.allSettled(places.map(p => p.x && p.x.noAlerts ? Promise.resolve([])
+      : get(`https://api.weather.gov/alerts/active?point=${(+p.lat).toFixed(4)},${(+p.lon).toFixed(4)}`, { headers: { Accept: 'application/geo+json' } })
+      .then(j => (j.features || []).map(f => Object.fromEntries(KEEP.map(k => [k, f.properties[k] ?? null]))))
+      .catch(e => { if (e.status !== 400) throw e; if (p.x) p.x.noAlerts = true; return []; }))),
     Promise.allSettled(MODELS.map(([k]) => get(`https://api.open-meteo.com/data/${k}/static/meta.json`))),
   ]);
   const now = Date.now(), fetched = isoNow(), notes = [];
@@ -1022,7 +1028,7 @@ function drawLocs() {
     const d = here ? `<span class="dist"><span class="arrow" style="transform:rotate(${Math.round(bearing(here, p))}deg)">▲</span> ${Math.round(miles(here, p))} mi</span>` : '';
     const wu = S.wu ? `<a href="${wuUrl(p)}" target="_blank" rel="noopener" title="Weather Underground's 10-day forecast for this spot: another good forecast">WU ↗</a>` : '';
     const note = esc(p.note || '');
-    return `<div class="prow" data-name="${esc(p.name)}"><span class="grip" aria-label="Drag to reorder">≡</span><label class="pl"><input type="checkbox" data-i="${i}"${x.on ? ' checked' : ''}><span>${esc(p.name)}</span><span class="d">${note ? note + ' · ' : ''}${(p.elevFt || 0).toLocaleString()} ft${x.wx ? ' · added, copy of ' + when(Date.parse(x.wx.fetched)) : ''}</span></label>${d}${wu}<button class="del" data-del="${i}">Delete</button></div>`;
+    return `<div class="prow" data-name="${esc(p.name)}"><span class="grip" aria-label="Drag to reorder">≡</span><label class="pl"><input type="checkbox" data-i="${i}"${x.on ? ' checked' : ''}><span>${esc(p.name)}</span><span class="d">${note ? note + ' · ' : ''}${(p.elevFt || 0).toLocaleString()} ft${x.wx ? ' · added, copy of ' + when(Date.parse(x.wx.fetched)) : ''}${x.noAlerts ? ' · no alerts outside the US' : ''}</span></label>${d}${wu}<button class="del" data-del="${i}">Delete</button></div>`;
   }).join('');
   drawSetsList();
 }
@@ -1075,7 +1081,7 @@ function offer(loc) {
 $('acancel').addEventListener('click', () => { pending = null; $('addrow').hidden = true; });
 const offStr = s => `${s < 0 ? '-' : '+'}${pad(Math.floor(Math.abs(s) / 3600))}:${pad(Math.floor(Math.abs(s) % 3600 / 60))}`;
 const rnd = (v, n) => v == null ? null : n ? Math.round(v * 10 ** n) / 10 ** n : Math.round(v);
-async function getJson(url, opts) { const r = await fetch(url, opts); if (r.status === 429) throw new Error('Open-Meteo is busy (too many requests); try again in a minute'); if (!r.ok) throw new Error('the server answered ' + r.status); return r.json(); }
+async function getJson(url, opts) { const r = await fetch(url, opts); if (r.status === 429) throw new Error('Open-Meteo is busy (too many requests); try again in a minute'); if (!r.ok) throw Object.assign(new Error('the server answered ' + r.status), { status: r.status }); return r.json(); }
 async function fetchForecast(lat, lon) {   // the same request as fetch_snapshot_c.py, for one place
   const d = await getJson(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_gusts_10m_max,weather_code&hourly=temperature_2m,precipitation_probability,wind_gusts_10m,precipitation&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&past_days=${W.pastDays || 7}&forecast_days=16`);
   const D = d.daily, H = d.hourly;
@@ -1113,7 +1119,8 @@ $('aadd').addEventListener('click', async () => {
     const wx = await fetchForecast(loc.lat, loc.lon);
     const x = { name, on: true, lat: loc.lat, lon: loc.lon, note: loc.note || '', wx };
     const notes = [];
-    try { x.alerts = await fetchAlerts(loc.lat, loc.lon); } catch (e) { notes.push('alerts not fetched (' + e.message + ')'); }
+    try { x.alerts = await fetchAlerts(loc.lat, loc.lon); }
+    catch (e) { if (e.status === 400) { x.alerts = []; x.noAlerts = true; } else notes.push('alerts not fetched (' + e.message + ')'); }   // 400: outside the US
     try { x.clim = await fetchClimate(loc.lat, loc.lon); } catch (e) { notes.push('climate not fetched (' + e.message + ')'); }
     S.places.push(x); save(); joinAdded();
     pending = null; $('addrow').hidden = true; busy(btn, 'Add', false); btn.disabled = false;
@@ -1140,7 +1147,7 @@ $('slist').addEventListener('click', e => {
   if (d) { S.sets[+d.dataset.sdel].del = true; save(); drawSetsList(); }
 });
 
-// search by town and state, results as you type (Open-Meteo geocoding; US only)
+// search by town, and state or country, results as you type (Open-Meteo geocoding; any country since 0.62)
 const STATES = { AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California', CO: 'Colorado', CT: 'Connecticut', DE: 'Delaware', DC: 'District of Columbia',
   FL: 'Florida', GA: 'Georgia', HI: 'Hawaii', ID: 'Idaho', IL: 'Illinois', IN: 'Indiana', IA: 'Iowa', KS: 'Kansas', KY: 'Kentucky', LA: 'Louisiana', ME: 'Maine',
   MD: 'Maryland', MA: 'Massachusetts', MI: 'Michigan', MN: 'Minnesota', MS: 'Mississippi', MO: 'Missouri', MT: 'Montana', NE: 'Nebraska', NV: 'Nevada',
@@ -1153,14 +1160,18 @@ async function search() {
   const raw = $('q').value.trim(), seq = ++qSeq;
   if (raw.length < 2) { $('hits').innerHTML = ''; return; }
   const [town, st] = raw.split(',').map(s => s.trim());
-  const want = st ? (STATES[st.toUpperCase()] || st).toLowerCase() : '';
+  const want = st ? (STATES[st.toUpperCase()] || st).toLowerCase() : '', cc = st ? ({ UK: 'GB' })[st.toUpperCase()] || st.toUpperCase() : '';
+  // a US state ("UT" or "Utah") means that state only, so CA is not Canada nor Georgia the country; anything else: region, country or country code
+  const usState = !!st && (st.toUpperCase() in STATES || Object.values(STATES).some(v => v.toLowerCase() === want));
+  const fits = h => !want || (usState ? h.country_code === 'US' && (h.admin1 || '').toLowerCase() === want
+    : [h.admin1, h.country].some(v => (v || '').toLowerCase().startsWith(want)) || h.country_code === cc);
   try {
-    const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(town)}&count=20&language=en&format=json&countryCode=US`);
+    const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(town)}&count=20&language=en&format=json`);
     const j = await r.json(); if (seq !== qSeq) return;
-    const hits = (j.results || []).filter(h => !want || (h.admin1 || '').toLowerCase().startsWith(want)).slice(0, 8);
-    $('hits').innerHTML = hits.length ? hits.map((h, i) => `<button data-h="${i}">${esc(h.name)}, ${esc(h.admin1 || '')}${h.admin2 ? ' · ' + esc(h.admin2) : ''}${h.elevation != null ? ' · ' + Math.round(h.elevation * 3.28084).toLocaleString() + ' ft' : ''}</button>`).join('') : '<div class="sec">No US place by that name.</div>';
+    const hits = (j.results || []).filter(fits).slice(0, 8);
+    $('hits').innerHTML = hits.length ? hits.map((h, i) => `<button data-h="${i}">${esc(h.name)}, ${esc(h.admin1 || '')}${h.country_code !== 'US' && h.country ? ', ' + esc(h.country) : ''}${h.admin2 ? ' · ' + esc(h.admin2) : ''}${h.elevation != null ? ' · ' + Math.round(h.elevation * 3.28084).toLocaleString() + ' ft' : ''}</button>`).join('') : '<div class="sec">No place by that name.</div>';
     $('hits').onclick = e => { const b = e.target.closest('[data-h]'); if (!b) return; const h = hits[+b.dataset.h];
-      const ab = Object.keys(STATES).find(k => STATES[k] === h.admin1) || h.admin1 || '';
+      const ab = h.country_code === 'US' ? Object.keys(STATES).find(k => STATES[k] === h.admin1) || h.admin1 || '' : h.country || h.admin1 || '';
       offer({ name: h.name, lat: h.latitude, lon: h.longitude, note: ab, src: `search (${h.name}, ${h.admin1 || ''})` }); $('hits').innerHTML = ''; $('q').value = ''; };
   } catch (e) { if (seq === qSeq) $('hits').innerHTML = '<div class="sec">Search needs a connection; none now.</div>'; }
 }
@@ -1547,7 +1558,7 @@ if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues && w
 if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', drawDevice);
 
 function refresh() { drawUnits(); drawFt(); drawTable(); drawKey(); drawFcst(); drawClim(); drawSets(); drawProfiles(); showRating(); }
-const VERSION = '0.61', VERSION_DATE = '2026-10-31';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
+const VERSION = '0.62', VERSION_DATE = '2026-10-31';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
 $('brand').textContent = `WxTable ${VERSION}`;
 $('aboutName').textContent = `WxTable v${VERSION} · ${VERSION_DATE}`;   // the Rydn format, as DoStack's About
 $('strip').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; save(); showTab(); });
