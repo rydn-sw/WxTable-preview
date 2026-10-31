@@ -3,9 +3,10 @@
 <meta name="robots" content="noindex">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>WxTable 0.54</title>
+<title>WxTable 0.55</title>
 <style>
-/* WxTable 0.54 (2026-10-31): a paragraph break before "Great for" in the About intro (JG: "Paragraph break at
+/* WxTable 0.55 (2026-10-31): About, Apps we like, above Data: AirNow, Watch Duty, MyRadar.
+   0.54 (2026-10-31): a paragraph break before "Great for" in the About intro (JG: "Paragraph break at
    "Great for"").
    0.53 (2026-10-31): JG's sentences at the end of the About intro ("Great for travelers, ...").
    0.52 (2026-10-31): on Climate, everything but the heading below the table: the precip bar key, the Show
@@ -455,6 +456,10 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
   <div style="max-width:640px">Your feedback, comments, and questions are welcome! We would love to hear how you used WxTable in your journeys.<br><a href="mailto:support@rydnsoftware.com">support@rydnsoftware.com</a></div>
   <h2>Website with more great apps for the road, and other uses too</h2>
   <div><a href="https://rydnsoftware.com" target="_blank" rel="noopener">https://rydnsoftware.com</a></div>
+  <h2>Apps we like</h2>
+  <div>Smoke: <a href="https://www.airnow.gov/" target="_blank" rel="noopener">AirNow</a></div>
+  <div>Wildfires with county alerts you set: <a href="https://www.watchduty.org/" target="_blank" rel="noopener">Watch Duty</a></div>
+  <div>Radar with flood alerts: <a href="https://myradar.com/" target="_blank" rel="noopener">MyRadar</a></div>
   <h2>Data</h2>
   <div class="sec" style="font-size:13px;max-width:640px">Forecasts and past days: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Weather data by Open-Meteo.com</a> (free for non-commercial use, with credit). Weather Service alerts: National Weather Service, api.weather.gov (public domain). The usual weather for each date, and the Climate tab: Open-Meteo Historical Weather API, 1991–2020. Forecast accuracy (Forecasting tab): WxTable's own research, research\WxForecastResearch_v04.md, 2026-10-24.</div>
   <h2>This device</h2>   <!-- at the end of About (JG, 2026-10-30) -->
@@ -1442,7 +1447,7 @@ if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues && w
 if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', drawDevice);
 
 function refresh() { drawUnits(); drawFt(); drawTable(); drawKey(); drawFcst(); drawClim(); drawSets(); drawProfiles(); showRating(); }
-const VERSION = '0.54', VERSION_DATE = '2026-10-31';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
+const VERSION = '0.55', VERSION_DATE = '2026-10-31';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
 $('brand').textContent = `WxTable ${VERSION}`;
 $('aboutName').textContent = `WxTable v${VERSION} · ${VERSION_DATE}`;   // the Rydn format, as DoStack's About
 $('strip').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; save(); showTab(); });
