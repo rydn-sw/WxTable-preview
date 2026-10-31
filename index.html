@@ -3,9 +3,14 @@
 <meta name="robots" content="noindex">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>WxTable 0.51</title>
+<title>WxTable 0.52</title>
 <style>
-/* WxTable 0.51 (2026-10-31): the Climate table's header row stays put while the table scrolls (JG: "On the Climate
+/* WxTable 0.52 (2026-10-31): on Climate, everything but the heading below the table: the precip bar key, the Show
+   checkboxes, Units and the notes (JG: "Everything needs to go BELOW the table, including the checkboxes"); the heading
+   ends "See key below the table". Locations tightened (JG: "The location tab is mostly blank space: we need to tighten
+   this up"): the add controls on one row, Near me and the WU links on one row, the places in as many columns as fit,
+   reading down each column. The WxTable title opens About (JG: "WxTable title: on click, do to About").
+   0.51 (2026-10-31): the Climate table's header row stays put while the table scrolls (JG: "On the Climate
    table, the top row needs to be a header row that does not move").
    0.50 (2026-10-31): the forecast time line at the bottom of the table or at the top, chosen on Options; bottom
    unless chosen (JG: "New option: Forecast info at top or bottom of table, default is bottom").
@@ -164,7 +169,7 @@ a { color:var(--lo); }
 .strip { display:flex; flex-wrap:nowrap; align-items:center; gap:2px 4px; min-height:26px; padding:0 4px; box-sizing:border-box; white-space:nowrap; overflow:hidden; }   /* one line; what does not fit goes into Other (0.49) */
 .strip button { font-size:12px; padding:2px 8px; }
 .strip select { font-size:12px; padding:2px 4px; max-width:24vw; }
-.strip .brand { font-weight:700; color:var(--hi); font-size:12px; margin-right:4px; }
+.strip .brand { font-weight:700; color:var(--hi); font-size:12px; margin-right:4px; cursor:pointer; }   /* opens About (0.52) */
 .c.g { padding:0; }
 .c.g svg { display:block; }
 .c.eb { padding:2px 0 0 3px; }
@@ -259,7 +264,8 @@ a { color:var(--lo); }
 .soff { color:#fff; font-weight:400; }
 .st .d { color:var(--sec); font-size:12px; margin-left:6px; }
 /* places list, with a drag handle per row */
-.plist { margin-top:6px; }
+.plist { margin-top:6px; columns:300px; column-gap:16px; }   /* as many columns as fit, reading down (0.52) */
+.plist .prow { break-inside:avoid; }
 .prow { display:flex; align-items:center; gap:8px; padding:2px 0; }
 .prow.dragging { opacity:.5; }
 .grip { touch-action:none; cursor:grab; color:var(--sec); font-size:20px; line-height:1; padding:2px 6px; user-select:none; }
@@ -306,6 +312,8 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
 /* Climate */
 .ct { display:grid; grid-template-columns:110px repeat(5, minmax(110px, 1fr)); max-width:1180px; overflow:auto; }   /* its own scrolling area, as tall as the screen allows (0.51) */
 .ct > div { border-bottom:1px solid #333; padding:4px 6px; font-size:14px; font-variant-numeric:tabular-nums; }
+.ckeys { margin-top:8px; }   /* under the Climate table (0.52) */
+.ckeys .ckey { flex-wrap:wrap; }   /* the five Show boxes wrap on a narrow screen */
 .ct .h { color:var(--sec); font-size:12px; position:sticky; top:0; z-index:1; background:#000; }   /* the header row does not move (0.51) */
 .warm { color:var(--hi); font-weight:700; }
 .cool { color:var(--lo); font-weight:700; }
@@ -351,7 +359,7 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
 </style></head><body>
 <span id="tprobe" aria-hidden="true">0</span>
 <div class="strip" id="strip">
-  <span class="brand" id="brand"></span>
+  <span class="brand" id="brand" data-tab="about" role="button" title="About"></span>
   <button data-tab="locs">Locations</button>
   <button data-tab="table">Table</button>
   <select id="layout" aria-label="Layout"></select>
@@ -370,12 +378,10 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
   <div class="row2">
     <input type="search" id="q" placeholder="Search: town, state (e.g. Moab, UT)" autocomplete="off" aria-label="Search for a town">
     <button class="btn" id="gps">Use GPS</button>
-  </div>
-  <div class="hits" id="hits"></div>
-  <div class="row2">
     <input type="text" id="paste" placeholder="Paste a position (latitude, longitude)" autocomplete="off" aria-label="Paste a position">
     <button class="info" id="pinfo" title="Paste the latitude and longitude of a place, copied from Google Maps, a GPS app or a website. Examples: 35.084, -106.651 | 35.084 N 106.651 W | 35°05'02&quot;N 106°39'04&quot;W | a Google Maps link with @35.084,-106.651">i</button>
   </div>
+  <div class="hits" id="hits"></div>
   <div class="help" id="phelp" hidden>Paste the latitude and longitude of a place, copied from Google Maps (press and hold the spot, then copy the numbers), a GPS app, or a website. Any of these work: <b>35.084, -106.651</b> · <b>35.084 N 106.651 W</b> · <b>35°05'02"N 106°39'04"W</b> · a Google Maps link containing <b>@35.084,-106.651</b>. West longitudes are negative.</div>
   <div class="addrow" id="addrow" hidden>
     <div class="row2"><input type="text" id="aname" aria-label="Name for the new location"><button class="btn" id="aadd">Add</button><button class="btn" id="acancel">Cancel</button></div>
@@ -383,9 +389,8 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
   </div>
   <div class="sec" id="pmsg"></div>
   <h2>Locations</h2>
-  <div class="row2"><button class="btn" id="nearme">Near me</button><span class="sec" id="nearmsg"></span></div>
+  <div class="row2"><button class="btn" id="nearme">Near me</button><span class="sec" id="nearmsg"></span><label class="ck"><input type="checkbox" id="twu">Weather Underground links</label><span class="sec">WU ↗ beside each place: its 10-day forecast</span></div>
   <div class="sec">Checked places are in the table. Drag ≡ to change the order.</div>
-  <div class="row2"><label class="ck"><input type="checkbox" id="twu">Weather Underground links</label><span class="sec">WU ↗ beside each place: its 10-day forecast</span></div>
   <div class="plist" id="plist"></div>
   <h2>Saved sets</h2>
   <div class="sec">Stored on this device, in this browser only.</div>   <!-- JG: "add a note that these are stored on your device" -->
@@ -415,9 +420,10 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
 </div>
 
 <div id="pClim" class="pane" hidden>
-  <h2>Recent weather against the average for the same dates</h2>
-  <div class="sec" id="cnote"></div>
+  <h2>Recent weather against the average for the same dates. See key below the table</h2>
   <div class="ct" id="ct"></div>
+  <div class="ckeys" id="ckeys"></div>
+  <div class="sec" id="cnote"></div>
 </div>
 
 <div id="pOpts" class="pane" hidden>
@@ -923,8 +929,11 @@ let drag = null;
 $('plist').addEventListener('pointerdown', e => { const h = e.target.closest('.grip'); if (!h) return; e.preventDefault();
   drag = h.closest('.prow'); drag.classList.add('dragging'); h.setPointerCapture(e.pointerId); });
 $('plist').addEventListener('pointermove', e => { if (!drag) return;
-  const rows = [...$('plist').children], target = rows.find(r => r !== drag && e.clientY < r.getBoundingClientRect().top + r.offsetHeight / 2);
-  if (target) { if (target !== drag.nextSibling) $('plist').insertBefore(drag, target); } else if (drag !== $('plist').lastChild) $('plist').appendChild(drag); });
+  // the place under the finger (0.52: the list can be in columns): before it in its top half, after it in its bottom half
+  const over = document.elementFromPoint(e.clientX, e.clientY), row = over && over.closest('#plist .prow');
+  if (!row || row === drag) return;
+  const r = row.getBoundingClientRect(), before = e.clientY < r.top + r.height / 2;
+  $('plist').insertBefore(drag, before ? row : row.nextSibling); });
 function endDrag() { if (!drag) return; drag.classList.remove('dragging'); drag = null;
   const names = [...$('plist').children].map(r => r.dataset.name); S.places.sort((a, b) => names.indexOf(a.name) - names.indexOf(b.name));
   save(); drawLocs(); drawTable(); }
@@ -1184,7 +1193,7 @@ document.addEventListener('change', e => { const c = e.target; if (!c.dataset ||
   S.cwin = CWIN.map(([k]) => k).filter(k => k === c.dataset.cw ? c.checked : cwOn(k)); save(); refresh(); });
 function drawClim() {
   const C = window.WXC;
-  if (!C) { $('cnote').textContent = 'No climate copy loaded.'; $('ct').innerHTML = ''; return; }
+  if (!C) { $('cnote').textContent = 'No climate copy loaded.'; $('ct').innerHTML = ''; $('ckeys').innerHTML = ''; return; }
   const any = Object.values(CLIM)[0];
   $('cnote').textContent = `Average high, average low and total precip, beside the 1991–2020 average for the same dates. Through ${any ? any.through : '?'} (the archive runs a few days behind). Source: Open-Meteo Historical Weather API, copy of ${when(Date.parse(C.fetched))}.`;
   const sgn = d => { const v = dT(d); return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(1); };
@@ -1193,10 +1202,11 @@ function drawClim() {
   const rcell = (a, n) => { const pct = n > 0 ? Math.round(a / n * 100) : null;
     return pct == null ? `<div>Precip ${amtTxt(a, 2)} <span class="sec">(normal: none)</span></div>`
       : `<div>Precip <b>${pct}%</b> of normal${track(pct)}<span class="sec">${amtTxt(a, 2)} vs ${amtTxt(n, 2)}</span></div>`; };
-  let h = `<div class="ckey" style="grid-column:1 / -1">Precip bar: ${track(100)} the white mark is normal for those dates; blue past it is wetter than normal, short of it drier; ▶ more than 3 times normal.</div>`
-    + `<div class="ckey" style="grid-column:1 / -1">Show: ${cwBoxes()}</div>`
-    + `<div class="ckey" style="grid-column:1 / -1">Units: ${unitsCtl()}</div>`
-    + '<div class="h"></div>' + CW().map(([, t]) => `<div class="h">${t}</div>`).join('');
+  // under the table (0.52): the precip bar key, which periods to show, the units
+  $('ckeys').innerHTML = `<div class="ckey">Precip bar: ${track(100)} the white mark is normal for those dates; blue past it is wetter than normal, short of it drier; ▶ more than 3 times normal.</div>`
+    + `<div class="ckey">Show: ${cwBoxes()}</div>`
+    + `<div class="ckey">Units: ${unitsCtl()}</div>`;
+  let h = '<div class="h"></div>' + CW().map(([, t]) => `<div class="h">${t}</div>`).join('');
   $('ct').style.gridTemplateColumns = `110px repeat(${Math.max(1, CW().length)}, minmax(110px, 1fr))`;
   chosen().forEach(p => {
     const c = CLIM[p.name];
@@ -1209,9 +1219,9 @@ function drawClim() {
   $('ct').innerHTML = h;
   fitClim();
 }
-function fitClim() {   // the Climate table fills the screen below its notes, so its header row can stay at the top (0.51)
+function fitClim() {   // the Climate table fills the screen below its heading, so its header row can stay at the top (0.51); the key is under it (0.52)
   const ct = $('ct'); if ($('pClim').hidden) return;
-  ct.style.maxHeight = Math.max(160, window.innerHeight - (ct.getBoundingClientRect().top + window.scrollY) - 36) + 'px';   // 28 px of space under the tab, and a margin
+  ct.style.maxHeight = Math.max(160, window.innerHeight - (ct.getBoundingClientRect().top + window.scrollY) - 8) + 'px';
 }
 $('ct').addEventListener('click', async e => { const b = e.target.closest('[data-clim]'); if (!b) return;
   const x = S.places.find(y => y.name === b.dataset.clim); if (!x || !x.lat) return;
@@ -1428,7 +1438,7 @@ if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues && w
 if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', drawDevice);
 
 function refresh() { drawUnits(); drawFt(); drawTable(); drawKey(); drawFcst(); drawClim(); drawSets(); drawProfiles(); showRating(); }
-const VERSION = '0.51', VERSION_DATE = '2026-10-31';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
+const VERSION = '0.52', VERSION_DATE = '2026-10-31';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
 $('brand').textContent = `WxTable ${VERSION}`;
 $('aboutName').textContent = `WxTable v${VERSION} · ${VERSION_DATE}`;   // the Rydn format, as DoStack's About
 $('strip').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; save(); showTab(); });
