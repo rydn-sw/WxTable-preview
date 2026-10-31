@@ -3,9 +3,11 @@
 <meta name="robots" content="noindex">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>WxTable 0.56</title>
+<title>WxTable 0.57</title>
 <style>
-/* WxTable 0.56 (2026-10-31): live data (JG: "I want a LIVE prototype"; "Ready for live data"): the forecast, alerts
+/* WxTable 0.57 (2026-10-31): a Refresh button on the forecast time line (R68; JG: "Yes, Refresh button"): it opens
+   the page again, which fetches the forecast, alerts and model run times anew.
+   0.56 (2026-10-31): live data (JG: "I want a LIVE prototype"; "Ready for live data"): the forecast, alerts
    and model run times fetched when the page opens; the bundled files only when there is no connection.
    0.55 (2026-10-31): About, Apps we like, above Data: AirNow, Watch Duty, MyRadar.
    0.54 (2026-10-31): a paragraph break before "Great for" in the About intro (JG: "Paragraph break at
@@ -355,6 +357,7 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
 #pTable { display:flex; flex-direction:column; }
 #pTable.ftbottom .ftrow { order:2; }   /* the forecast time line under the table (0.50) */
 .ftrow .ft { flex:1 1 auto; min-width:0; }
+.ftrow .refresh { flex:0 0 auto; font-size:12px; padding:2px 10px; margin:2px 4px 2px 0; }   /* fetch again (0.57) */
 .nav { display:flex; align-items:center; gap:2px; }
 .ftrow .nav { flex:0 0 auto; padding:2px 4px 2px 0; }   /* the top row too narrow for them: at the end of the forecast line */
 .nav button { font-size:12px; padding:2px 8px; }
@@ -407,7 +410,7 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
   <div id="slist"></div>
 </div>
 
-<div id="pTable"><div class="ftrow" id="ftrow"><div class="ft" id="ft"></div></div><div class="tw" id="tw"><div class="t" id="t"></div></div></div>
+<div id="pTable"><div class="ftrow" id="ftrow"><div class="ft" id="ft"></div><button class="refresh" id="refresh">Refresh</button></div><div class="tw" id="tw"><div class="t" id="t"></div></div></div>
 
 <div id="pExpl" class="pane" hidden>
   <div class="preview" id="xpreview"></div>
@@ -938,6 +941,7 @@ function goDay(d) {
   clearTimeout(dayTimer); dayTimer = setTimeout(() => { dayTarget = null; }, 800);
   tw.scrollTo({ left: dayTarget * step, behavior: 'smooth' });
 }
+$('refresh').addEventListener('click', () => { setTimeout(() => location.reload(), 150); });   // the loader fetches anew; the tab and choices are already saved
 $('dprev').addEventListener('click', () => goDay(-1));
 $('dnext').addEventListener('click', () => goDay(1));
 $('dtoday').addEventListener('click', () => { const tw = $('tw'), lay = L(); tw.scrollTo({ left: (days(true).length - ahead()) * SZ(lay).cw * (lay.halves ? 2 : 1), behavior: 'smooth' }); });
@@ -1536,7 +1540,7 @@ if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues && w
 if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', drawDevice);
 
 function refresh() { drawUnits(); drawFt(); drawTable(); drawKey(); drawFcst(); drawClim(); drawSets(); drawProfiles(); showRating(); }
-const VERSION = '0.56', VERSION_DATE = '2026-10-31';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
+const VERSION = '0.57', VERSION_DATE = '2026-10-31';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
 $('brand').textContent = `WxTable ${VERSION}`;
 $('aboutName').textContent = `WxTable v${VERSION} · ${VERSION_DATE}`;   // the Rydn format, as DoStack's About
 $('strip').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; save(); showTab(); });
