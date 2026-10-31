@@ -3,9 +3,11 @@
 <meta name="robots" content="noindex">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>WxTable 0.58</title>
+<title>WxTable 0.59</title>
 <style>
-/* WxTable 0.58 (2026-10-31): Apps we like on one line, with bullets between (JG: "Apps we like: (all in one line with
+/* WxTable 0.59 (2026-10-31): new users start on E Basic graphics (JG: "For new users, default to basic graphics");
+   the table's top line bold (JG: "Bold top line for the table").
+   0.58 (2026-10-31): Apps we like on one line, with bullets between (JG: "Apps we like: (all in one line with
    bullets between them)").
    0.57 (2026-10-31): a Refresh button on the forecast time line (R68; JG: "Yes, Refresh button"): it opens
    the page again, which fetches the forecast, alerts and model run times anew.
@@ -208,13 +210,13 @@ a { color:var(--lo); }
 .t > div { border-right:1px solid var(--line); border-bottom:1px solid var(--line); box-sizing:border-box; overflow:hidden; }
 .t.rows > div { border-right-color:transparent; }
 .t.cols > div { border-bottom-color:transparent; }
-.hd { height:calc(18px * var(--tk, 1)); text-align:center; font-size:11px; color:var(--sec); padding-top:2px; }
-.hd.we { color:#fff; font-weight:600; }
+.hd { height:calc(18px * var(--tk, 1)); text-align:center; font-size:11px; color:var(--sec); padding-top:2px; font-weight:700; }   /* the top line bold (0.59) */
+.hd.we { color:#fff; font-weight:700; }
 .hd.today { color:#000; background:var(--hi); font-weight:700; }
-.hd.past { color:var(--dim); font-style:italic; font-weight:400; }
+.hd.past { color:var(--dim); font-style:italic; font-weight:700; }
 .l07 .hd { grid-column:span 2; }
 .corner, .nm { position:sticky; left:0; z-index:2; background:#000; }
-.corner { height:calc(18px * var(--tk, 1)); font-size:9px; color:var(--sec); padding:3px 0 0 3px; white-space:nowrap; }
+.corner { height:calc(18px * var(--tk, 1)); font-size:9px; color:var(--sec); padding:3px 0 0 3px; white-space:nowrap; font-weight:700; }
 .nm { height:var(--rh); padding:3px 0 0 4px; white-space:nowrap; }
 .nm b { font-size:12px; font-weight:600; display:block; overflow:hidden; text-overflow:ellipsis; }
 .nm span { font-size:9px; color:var(--sec); }
@@ -595,7 +597,7 @@ const TOUCH_MQ = matchMedia('(pointer: coarse)'), TOUCH_FORCE = /[?&]touch=1\b/.
 const setTouch = () => document.documentElement.classList.toggle('touch', TOUCH_FORCE == null ? TOUCH_MQ.matches : TOUCH_FORCE);
 const onTouchChange = () => { setTouch(); refresh(); fitStrip(); };   // addListener: Safari before 14 has no addEventListener here
 setTouch(); if (TOUCH_MQ.addEventListener) TOUCH_MQ.addEventListener('change', onTouchChange); else TOUCH_MQ.addListener(onTouchChange);
-let S = { ftPos: 'bottom', layout: '0.09', lines: 'g88', which: 'both',   // JG: "Default is rows and columns, light gray"
+let S = { ftPos: 'bottom', layout: 'EB', lines: 'g88', which: 'both',   // JG: "Default is rows and columns, light gray"
  tab: 'table', rainshow: 'both', units: 'F', amt: 'in', changes: true, wu: false,
   ahead: '', rainMin: 20, amtMin: 0, e: null, ft: '2', cwin: null, places: null, profiles: [], sets: [], raterName: '', ratings: {} };
 try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s && typeof s === 'object') S = Object.assign(S, s, { ratings: Object.assign({}, s.ratings) }); } catch (e) { /* storage blocked: defaults */ }
@@ -826,7 +828,7 @@ const RMIN = [10, 20, 30, 40, 50].map(v => ({ k: String(v), name: `chance ${v}%+
 const AMIN = () => [{ k: '0', name: 'any amount' }, ...[0.01, 0.05, 0.1, 0.25].map(v => ({ k: String(v), name: `${aMinTxt(v)}+` }))];
 const aMinTxt = v => { if (!MM()) return `${v} in`; const m = v * 25.4; return `${m < 1 ? Math.round(m * 100) / 100 : Math.round(m * 10) / 10} mm`; };
 const AMTU = [{ k: 'in', name: 'inches' }, { k: 'mm', name: 'millimeters' }];
-if (!LAYOUTS[S.layout]) S.layout = '0.09';
+if (!LAYOUTS[S.layout]) S.layout = 'EB';   // Basic graphics for new users (0.59)
 const L = () => LAYOUTS[S.layout];
 const lineColor = () => (LINES.find(l => l.k === S.lines) || LINES[0]).c || L().line;
 
@@ -1540,7 +1542,7 @@ if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues && w
 if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', drawDevice);
 
 function refresh() { drawUnits(); drawFt(); drawTable(); drawKey(); drawFcst(); drawClim(); drawSets(); drawProfiles(); showRating(); }
-const VERSION = '0.58', VERSION_DATE = '2026-10-31';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
+const VERSION = '0.59', VERSION_DATE = '2026-10-31';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
 $('brand').textContent = `WxTable ${VERSION}`;
 $('aboutName').textContent = `WxTable v${VERSION} · ${VERSION_DATE}`;   // the Rydn format, as DoStack's About
 $('strip').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; save(); showTab(); });
