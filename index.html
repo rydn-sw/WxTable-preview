@@ -3,9 +3,11 @@
 <meta name="robots" content="noindex">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>WxTable 0.57</title>
+<title>WxTable 0.58</title>
 <style>
-/* WxTable 0.57 (2026-10-31): a Refresh button on the forecast time line (R68; JG: "Yes, Refresh button"): it opens
+/* WxTable 0.58 (2026-10-31): Apps we like on one line, with bullets between (JG: "Apps we like: (all in one line with
+   bullets between them)").
+   0.57 (2026-10-31): a Refresh button on the forecast time line (R68; JG: "Yes, Refresh button"): it opens
    the page again, which fetches the forecast, alerts and model run times anew.
    0.56 (2026-10-31): live data (JG: "I want a LIVE prototype"; "Ready for live data"): the forecast, alerts
    and model run times fetched when the page opens; the bundled files only when there is no connection.
@@ -465,9 +467,7 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
   <h2>Website with more great apps for the road, and other uses too</h2>
   <div><a href="https://rydnsoftware.com" target="_blank" rel="noopener">https://rydnsoftware.com</a></div>
   <h2>Apps we like</h2>
-  <div>Smoke: <a href="https://www.airnow.gov/" target="_blank" rel="noopener">AirNow</a></div>
-  <div>Wildfires with county alerts you set: <a href="https://www.watchduty.org/" target="_blank" rel="noopener">Watch Duty</a></div>
-  <div>Radar with flood alerts: <a href="https://myradar.com/" target="_blank" rel="noopener">MyRadar</a></div>
+  <div style="max-width:640px">Smoke: <a href="https://www.airnow.gov/" target="_blank" rel="noopener">AirNow</a> &bull; Wildfires with county alerts you set: <a href="https://www.watchduty.org/" target="_blank" rel="noopener">Watch Duty</a> &bull; Radar with flood alerts: <a href="https://myradar.com/" target="_blank" rel="noopener">MyRadar</a></div>
   <h2>Data</h2>
   <div class="sec" style="font-size:13px;max-width:640px">Forecasts and past days: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Weather data by Open-Meteo.com</a> (free for non-commercial use, with credit). Weather Service alerts: National Weather Service, api.weather.gov (public domain). The usual weather for each date, and the Climate tab: Open-Meteo Historical Weather API, 1991–2020. Forecast accuracy (Forecasting tab): WxTable's own research, research\WxForecastResearch_v04.md, 2026-10-24.</div>
   <h2>This device</h2>   <!-- at the end of About (JG, 2026-10-30) -->
@@ -1540,7 +1540,7 @@ if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues && w
 if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', drawDevice);
 
 function refresh() { drawUnits(); drawFt(); drawTable(); drawKey(); drawFcst(); drawClim(); drawSets(); drawProfiles(); showRating(); }
-const VERSION = '0.57', VERSION_DATE = '2026-10-31';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
+const VERSION = '0.58', VERSION_DATE = '2026-10-31';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
 $('brand').textContent = `WxTable ${VERSION}`;
 $('aboutName').textContent = `WxTable v${VERSION} · ${VERSION_DATE}`;   // the Rydn format, as DoStack's About
 $('strip').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; save(); showTab(); });
