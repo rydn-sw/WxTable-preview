@@ -11,10 +11,15 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>WxTable 0.65.5</title>
+<title>WxTable 0.65.6</title>
 <link rel="icon" type="image/png" sizes="32x32" href="WxTable_favicon_32_v01.png">
 <style>
-/* WxTable 0.65.5 (2026-11-01): the WxTable icon from the Storefront repository, as the browser tab's icon and at the top
+/* WxTable 0.65.6 (2026-11-01): the forecast line starts with the forecast's time, then what Auto refresh is set to, as
+   text, then a Manual Refresh link, then the rest; every clock time on the page carries the time zone, the browser's own
+   (e.g. MST) (JG: "Strange layout. At the beginning of the line: Forecast as of Sun 2026-11-01 3:39 PM Auto Refresh:
+   <state><<Manual> then the rest of the info"; "Why are time zones not provided everywhere?"; of the mockups: "show what
+   it is set to"; "A button is not needed: make it a link Manual Refresh"; "Yes, make 0.65.6").
+   0.65.5 (2026-11-01): the WxTable icon from the Storefront repository, as the browser tab's icon and at the top
    of About, and nowhere else (JG: "Use these Icon files"; "the icon should only be used on the About page and as the web
    page icon").
    0.65.4 (2026-11-01): the link card no longer names the bare site as its address (og:url), so Facebook keeps a
@@ -442,6 +447,8 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
 .ftrow .ft { flex:1 1 auto; min-width:0; }
 .ftrow.crowd { flex-wrap:wrap; }   /* the days chooser and arrows moved here: the text gets its own line (0.64.2) */
 .ftrow.crowd .ft { flex-basis:100%; }
+.ftctl { display:inline-flex; align-items:center; gap:6px; white-space:nowrap; }   /* Auto refresh and Refresh, after the forecast's time (0.65.6) */
+.ftctl .refresh { margin:0 !important; padding:0 !important; font-size:12px; }   /* a link, not a button (0.65.6) */
 .ftrow .refresh { flex:0 0 auto; font-size:12px; padding:2px 10px; margin:2px 4px 2px 0; }   /* fetch again (0.57) */
 .nav { display:flex; align-items:center; gap:2px; }
 .ftrow #ndays { flex:0 0 auto; margin-right:4px; }   /* the days chooser, moved here when the top row is too narrow (0.63) */
@@ -501,7 +508,7 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
   <div class="sec" id="smsg"></div>
 </div>
 
-<div id="pTable"><div class="from" id="fromlink" hidden><span>From a link: <b id="fromname"></b></span><button id="fromclose">Close</button></div><div class="ftrow" id="ftrow"><div class="ft" id="ft"></div><button class="refresh" id="refresh">Refresh</button></div><div class="tw" id="tw"><div class="t" id="t"></div></div></div>
+<div id="pTable"><div class="from" id="fromlink" hidden><span>From a link: <b id="fromname"></b></span><button id="fromclose">Close</button></div><div class="ftrow" id="ftrow"><div class="ft" id="ft"></div><a href="#" class="refresh" id="refresh">Manual Refresh</a></div><div class="tw" id="tw"><div class="t" id="t"></div></div></div>
 
 <div id="pExpl" class="pane" hidden>
   <div class="preview" id="xpreview"></div>
@@ -633,7 +640,8 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
   const read = k => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } };
   const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
   const pad = n => String(n).padStart(2, '0');
-  const when = ms => { const d = new Date(ms), h = d.getHours(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${h % 12 || 12}:${pad(d.getMinutes())} ${h < 12 ? 'AM' : 'PM'}`; };
+  const tzOf = ms => { try { return ' ' + new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' }).formatToParts(new Date(ms)).find(p => p.type === 'timeZoneName').value; } catch (e) { return ''; } };
+  const when = ms => { const d = new Date(ms), h = d.getHours(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${h % 12 || 12}:${pad(d.getMinutes())} ${h < 12 ? 'AM' : 'PM'}${tzOf(ms)}`; };
   const offStr = s => `${s < 0 ? '-' : '+'}${pad(Math.floor(Math.abs(s) / 3600))}:${pad(Math.floor(Math.abs(s) % 3600 / 60))}`;
   const isoNow = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}${offStr(-d.getTimezoneOffset() * 60)}`; };
   const rnd = (v, n) => v == null ? null : n ? Math.round(v * 10 ** n) / 10 ** n : Math.round(v);
@@ -719,7 +727,10 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;'
 const cl = x => Math.max(0, Math.min(1, x));
 const addDay = (iso, n) => { const [y, m, d] = iso.split('-').map(Number); return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10); };
 const pad = n => String(n).padStart(2, '0');
-function when(ms) { const d = new Date(ms), h = d.getHours(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${h % 12 || 12}:${pad(d.getMinutes())} ${h < 12 ? 'AM' : 'PM'}`; }
+function tzOf(ms) {   // the time zone's short name, e.g. MST, for every clock time on the page (0.65.6; JG: "Why are time zones not provided everywhere?")
+  try { return ' ' + new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' }).formatToParts(new Date(ms)).find(p => p.type === 'timeZoneName').value; } catch (e) { return ''; }
+}
+function when(ms) { const d = new Date(ms), h = d.getHours(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${h % 12 || 12}:${pad(d.getMinutes())} ${h < 12 ? 'AM' : 'PM'}${tzOf(ms)}`; }
 const TODAY = W.fetched.slice(0, 10), ALL = W.places[0].days.map(d => d[0]), TI = ALL.indexOf(TODAY);
 W.places.forEach(p => { p.byDay = Object.fromEntries(p.days.map(r => [r[0], r])); });
 const NODAY = [null, null, null, 0, null, 0];   // a day an added place's copy does not cover: an empty box
@@ -1013,7 +1024,7 @@ function runOf(m) {
   return { made, due: made + every + delay, every, delay };
 }
 const ftRuns = () => FT_PARTS.map(p => Object.assign({}, p, runOf(p.m) || {})).filter(r => r.made);
-const clock = ms => { const d = new Date(ms), h = d.getHours(); return `${h % 12 || 12}:${pad(d.getMinutes())} ${h < 12 ? 'AM' : 'PM'}`; };
+const clock = ms => { const d = new Date(ms), h = d.getHours(); return `${h % 12 || 12}:${pad(d.getMinutes())} ${h < 12 ? 'AM' : 'PM'}${tzOf(ms)}`; };
 const dayOf = ms => { const d = new Date(ms); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
 const clockD = ms => (dayOf(ms) === dayOf(COPY) ? '' : `${WK[new Date(ms).getDay()]} ${dayOf(ms)} `) + clock(ms);   // a date only when not the copy's day
 const span = ms => { const m = Math.round(ms / 60000), h = Math.floor(m / 60); return h ? `${h} h${m % 60 ? ' ' + (m % 60) + ' min' : ''}` : `${m} min`; };
@@ -1036,7 +1047,13 @@ function drawFt() {   // the line over the table, in the style chosen under Opti
   if (!FT_STYLES[S.ft]) S.ft = '2';
   if (S.ftPos !== 'top') S.ftPos = 'bottom';
   $('pTable').classList.toggle('ftbottom', S.ftPos === 'bottom');
-  $('ft').innerHTML = ftHtml(S.ft);
+  $('ftrow').appendChild($('refresh'));   // out of the line before it is redrawn, or the redraw would destroy it
+  // after the forecast's time: what Auto refresh is set to, as text, then Manual Refresh (0.65.6; JG: "I don't care about
+  // turning refresh on or off: show what it is set to"); the setting itself stays under Options
+  const h = ftHtml(S.ft), i = h.indexOf('</span></span>') + 14, off = S.auto === 'off';
+  const tip = esc(off ? 'Off: only when you press Manual Refresh or open the page. Set under Options.' : 'While the page is on screen: Weather Service alerts checked every 10 minutes; a new forecast at most every 3 hours. Set under Options.');
+  $('ft').innerHTML = i < 14 ? h : h.slice(0, i) + `<span class="ftctl" id="ftctl"><span title="${tip}">Auto refresh: <b>${off ? 'Off' : 'Alerts 10 min, forecast 3 h'}</b></span></span>` + h.slice(i);
+  if ($('ftctl')) $('ftctl').appendChild($('refresh'));
 }
 function ftSample(k) {   // Options: each style as it looks; style 4 as a small band over four day headings
   if (k !== '4') return `<div class="ftl${S.ft === k ? ' on' : ''}">${ftHtml(k)}</div>`;
@@ -1146,7 +1163,7 @@ function alertRedraw() {   // 0.64.1: redraw for a changed alert, but never whil
   refresh();
 }
 document.addEventListener('visibilitychange', () => { if (!document.hidden) { autoCheck(); alertCheck(); } });
-$('refresh').addEventListener('click', () => { setTimeout(() => location.reload(), 150); });   // the loader fetches anew; the tab and choices are already saved
+$('refresh').addEventListener('click', e => { e.preventDefault(); setTimeout(() => location.reload(), 150); });   // the loader fetches anew; the tab and choices are already saved
 $('dprev').addEventListener('click', () => goDay(-1));
 $('dnext').addEventListener('click', () => goDay(1));
 $('dtoday').addEventListener('click', () => { const tw = $('tw'), lay = L(); tw.scrollTo({ left: (days(true).length - ahead()) * SZ(lay).cw * (lay.halves ? 2 : 1), behavior: 'smooth' }); });
@@ -1720,7 +1737,7 @@ function drawSets() {
     ['Days ahead', sel('oahead', AHEAD, String(ahead())), `<span class="sec">${ahead()} days from today; past days to the left</span>`],
     ['Forecast time', sel('ftsel', Object.entries(FT_STYLES).map(([k, v]) => ({ k, name: `${k} ${v}` })), S.ft), '<span class="sec">Under or over the table: when the forecast was made, and when the next one is due. All five below; yellow outline = in use</span>'],
     ['Forecast time at', sel('ftpos', [{ k: 'bottom', name: 'Bottom of the table' }, { k: 'top', name: 'Top of the table' }], S.ftPos), '<span class="sec">Where the forecast time line goes, with the day arrows when they are there (style 4 is inside the table). On a screen too short for the whole table it goes at the top, so Refresh stays in reach.</span>'],
-    ['Auto refresh', sel('auto', [{ k: 'run', name: 'Alerts 10 min, forecast 3 h' }, { k: 'off', name: 'Off' }], S.auto === 'off' ? 'off' : 'run'), '<span class="sec">While the page is on screen: Weather Service alerts checked every 10 minutes; a new forecast at most every 3 hours, a few minutes after a model run is expected (the times on the forecast line), not while you type or choose. Off: only when you press Refresh or open the page. The update frequency is fixed; if you need it changed, email <a href="mailto:support@rydnsoftware.com">support@rydnsoftware.com</a>.</span>'],
+    ['Auto refresh', sel('auto', [{ k: 'run', name: 'Alerts 10 min, forecast 3 h' }, { k: 'off', name: 'Off' }], S.auto === 'off' ? 'off' : 'run'), '<span class="sec">While the page is on screen: Weather Service alerts checked every 10 minutes; a new forecast at most every 3 hours, a few minutes after a model run is expected (the times on the forecast line), not while you type or choose. Off: only when you press Manual Refresh or open the page. The update frequency is fixed; if you need it changed, email <a href="mailto:support@rydnsoftware.com">support@rydnsoftware.com</a>.</span>'],
     ...Object.entries(FT_STYLES).map(([k, v]) => [`${k} ${v}`, '<span></span>', ftSample(k)]),
     ['Units', `<span>${unitsCtl()}</span>`, `<div class="sample">${sample('80px', sbox(shl(68, 45, '<span></span><span></span>')))}</div>`],
     ['Cell lines', sel('lines', LINES, S.lines), grid],
@@ -1926,7 +1943,7 @@ $('privBtn').addEventListener('click', () => {   // 0.65.1: the privacy policy o
   const b = $('privBtn'), open = $('priv').hidden;
   $('priv').hidden = !open; b.classList.toggle('on', open); b.setAttribute('aria-expanded', String(open));
 });
-const VERSION = '0.65.5', VERSION_DATE = '2026-11-01';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
+const VERSION = '0.65.6', VERSION_DATE = '2026-11-01';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
 $('brand').textContent = `WxTable ${VERSION}`;
 $('aboutName').textContent = `WxTable™ v${VERSION} · ${VERSION_DATE}`;   // ™ on About only (0.65)   // the Rydn format, as DoStack's About
 $('strip').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; save(); showTab(); });
