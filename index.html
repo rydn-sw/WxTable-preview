@@ -11,10 +11,16 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>WxTable 0.65.6</title>
+<title>WxTable 0.66</title>
 <link rel="icon" type="image/png" sizes="32x32" href="WxTable_favicon_32_v01.png">
 <style>
-/* WxTable 0.65.6 (2026-11-01): the forecast line starts with the forecast's time, then what Auto refresh is set to, as
+/* WxTable 0.66 (2026-11-01): a 7 Day Precip tab ("NEW 7 Day Precip" in the top row, NEW pulsing): what fell at each
+   place in the last 7 days up to now, measured (radar, rain and snow gauges, satellite) by the National Weather Service
+   River Forecast Centers; a total, a column per day, today so far, and the usual amount for the 7 days (JG: "what actually
+   fell?"; "I mean what makes the ground wet in physical reality: this matters"; "I think we should add a 7 Day Precip
+   button?"; "Yes, its own tab"; "Why are the columns so wide"; "NEW 7 Day Precip" for the button; "Can you animate
+   "NEW""; the heading in JG's words; "Yes, make 0.66").
+   0.65.6 (2026-11-01): the forecast line starts with the forecast's time, then what Auto refresh is set to, as
    text, then a Manual Refresh link, then the rest; every clock time on the page carries the time zone, the browser's own
    (e.g. MST) (JG: "Strange layout. At the beginning of the line: Forecast as of Sun 2026-11-01 3:39 PM Auto Refresh:
    <state><<Manual> then the rest of the info"; "Why are time zones not provided everywhere?"; of the mockups: "show what
@@ -417,6 +423,18 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
 .rtrack .fill { position:absolute; left:0; top:0; bottom:0; background:var(--rain); }
 .rtrack .norm { position:absolute; left:33.33%; top:-3px; bottom:-3px; width:2px; background:#fff; }
 .rtrack .more { position:absolute; right:-10px; top:-4px; color:var(--rain); font-size:11px; }
+.pt { grid-template-columns:120px 80px repeat(8, 44px) max-content; width:max-content; max-width:100%; }   /* 7 Day Precip: day columns 44 px, not stretched (0.66; JG: "Why are the columns so wide") */
+.new { color:var(--hi); font-weight:700; animation:newpulse 1.6s ease-in-out infinite; }   /* "NEW" on the 7 Day Precip button (0.66) */
+@keyframes newpulse { 0%, 100% { opacity:1; text-shadow:0 0 6px var(--hi); } 50% { opacity:.35; text-shadow:none; } }
+.on .new { color:#000; }   /* on the yellow of the open tab */
+@keyframes newpulseon { 0%, 100% { opacity:1; } 50% { opacity:.35; } }
+.on .new { animation-name:newpulseon; }
+@media (prefers-reduced-motion: reduce) { .new { animation:none; } }
+.pt .pd { display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:2px; font-size:12px; }
+.pt .pd .col { width:14px; background:var(--rain); min-height:0; }
+.pt .pd.now .col { background:repeating-linear-gradient(0deg, var(--rain) 0 3px, #2a5578 3px 5px); }
+.pt .h.c { text-align:center; }
+.pt .tot { font-size:16px; }
 .ckey { display:flex; align-items:center; gap:4px; font-size:12px; color:var(--sec); margin:4px 0 8px; }
 
 /* 0.48: finger-sized controls on touch screens (JG: "Phones only"); with a mouse, as compact as before. The page is marked
@@ -469,6 +487,7 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
   <select id="layout" aria-label="Layout"></select>
   <select id="ndays" aria-label="Days ahead"></select>
   <span class="nav" id="nav"><button id="dprev" aria-label="One day earlier">&#9664;</button><button id="dtoday" hidden>Today</button><button id="dnext" aria-label="One day later">&#9654;</button></span>
+  <button data-tab="precip"><span class="new">NEW</span> 7 Day Precip</button>
   <button data-tab="expl">Explainer</button>
   <button data-tab="fcst">Forecasting</button>
   <button data-tab="clim">Climate</button>
@@ -534,6 +553,13 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
   <div class="ct" id="ct"></div>
   <div class="ckeys" id="ckeys"></div>
   <div class="sec" id="cnote"></div>
+</div>
+
+<div id="pPrecip" class="pane" hidden>
+  <h2>What fell: measured precip in the last 7 days, up to now. Useful for dirt road and hiking trail conditions, snow sports, etc. See key below the table.</h2>
+  <div class="ct pt" id="pt"></div>
+  <div class="ckeys" id="pkeys"></div>
+  <div class="sec" id="pnote"></div>
 </div>
 
 <div id="pOpts" class="pane" hidden>
@@ -1193,9 +1219,9 @@ function fillLayouts() {
   $('layout').innerHTML = ORDER.map(v => `<option value="${v}">${NAME(v)}</option>`).join('');   // no stars here (JG: "Do not show the stars")
   $('layout').value = S.layout;
 }
-const TABS = { locs: 'pLocs', table: 'pTable', expl: 'pExpl', fcst: 'pFcst', clim: 'pClim', opts: 'pOpts', about: 'pAbout' };
+const TABS = { locs: 'pLocs', table: 'pTable', precip: 'pPrecip', expl: 'pExpl', fcst: 'pFcst', clim: 'pClim', opts: 'pOpts', about: 'pAbout' };
 // the top row (0.49): one line; the tabs that do not fit go, from About backwards to Locations, into the Other dropdown
-const OTHER_TABS = ['about', 'opts', 'clim', 'fcst', 'expl', 'locs'];
+const OTHER_TABS = ['about', 'opts', 'clim', 'fcst', 'expl', 'precip', 'locs'];
 function fitStrip() {
   const strip = $('strip'), other = $('other'), tab = k => strip.querySelector(`button[data-tab="${k}"]`);
   const over = () => strip.scrollWidth > strip.clientWidth + 1, moved = [];
@@ -1222,6 +1248,7 @@ function showTab() {
   if (S.tab === 'about') drawDevice();
   if (S.tab === 'locs') fitPlist();
   if (S.tab === 'clim') fitClim();
+  if (S.tab === 'precip') { for (const k in QPEC) if (QPEC[k].err) delete QPEC[k]; drawPrecip(); }   // a place that failed is tried again each time the tab opens
 }
 
 // ---------- Locations ----------
@@ -1721,6 +1748,73 @@ $('ct').addEventListener('click', async e => { const b = e.target.closest('[data
   try { x.clim = await fetchClimate(x.lat, x.lon); save(); joinAdded(); drawClim(); }
   catch (err) { busy(b, 'Fetch it', false); b.insertAdjacentText('afterend', ' ' + err.message); } });
 
+// ---------- 7 Day Precip (0.66; JG: "I think we should add a 7 Day Precip button?"; "Yes, its own tab") ----------
+// What fell, measured: the National Weather Service River Forecast Centers' precip estimates (NWS radar, automated and
+// manual gauges, satellite; about a 4 km grid; lower 48, Alaska and Puerto Rico), one request per place to the map service
+// obs/rfc_qpe. Its daily totals run 12:00 UTC to 12:00 UTC; Since 12Z covers today. Melted snow counts as water.
+const QPE = 'https://mapservices.weather.noaa.gov/raster/rest/services/obs/rfc_qpe/MapServer';
+const QPE_DAYS = [32, 36, 40, 44, 48, 52, 56], QPE_NOW = 4, QPE_NORM = 109;   // the last 1..7 days; since 12Z; the 7 days' normal
+const QPEC = Object.create(null);   // place name -> { v: { layer: inches or null } } or { err }; kept until the page reloads (no prototype, so any name is safe)
+let qpeT = null, qpeBusy = false;   // when the daily totals and today's total end (ms), from the service
+async function qpeOne(p) {
+  const q = new URLSearchParams({ geometry: `${p.lon},${p.lat}`, geometryType: 'esriGeometryPoint', sr: '4326', tolerance: '1',
+    mapExtent: `${p.lon - 1},${p.lat - 1},${p.lon + 1},${p.lat + 1}`, imageDisplay: '400,400,96', returnGeometry: 'false', f: 'json',
+    layers: 'all:' + [QPE_NOW, ...QPE_DAYS, QPE_NORM].join(',') });
+  const d = await getJson(`${QPE}/identify?${q}`), v = {};
+  (d.results || []).forEach(r => { const x = parseFloat(r.attributes['Service Pixel Value']); v[r.layerId] = Number.isFinite(x) ? Math.max(0, x) : null; });
+  return v;
+}
+async function qpeTimes() {   // the end of the daily totals (Today's Analysis) and of Since 12Z, lower 48
+  const end = async L => { const d = await getJson(`${QPE}/${L}/query?where=1%3D1&outFields=name,idp_issueddate&returnGeometry=false&f=json`);
+    const f = (d.features || []).find(x => /conus/.test(x.attributes.name)) || (d.features || [])[0]; return f ? f.attributes.idp_issueddate : null; };
+  const [day, now] = await Promise.all([end(31), end(3)]); return { day, now };
+}
+async function qpeLoad() {
+  if (qpeBusy) return; qpeBusy = true;
+  try {
+    if (!qpeT || !qpeT.day) qpeT = await qpeTimes().catch(() => ({}));   // asked again next time if it failed
+    await Promise.all(chosen().filter(p => !QPEC[p.name] && p.lat != null).map(async p => {
+      try { QPEC[p.name] = { v: await qpeOne(p) }; } catch (e) { QPEC[p.name] = { err: e.message }; } }));
+  } finally { qpeBusy = false; }
+  drawPrecip();
+}
+function drawPrecip() {
+  const P = chosen(), need = P.some(p => !QPEC[p.name] && p.lat != null);
+  if (need && !$('pPrecip').hidden) setTimeout(qpeLoad, 0);   // fetched only when the tab is open
+  const dayEnd = qpeT && qpeT.day, nowEnd = qpeT && qpeT.now;
+  // the 7 days, oldest first; each runs from 12:00 UTC the day before its end to 12:00 UTC (5 AM MST)
+  const days = [7, 6, 5, 4, 3, 2, 1].map(k => ({ k, start: dayEnd ? dayEnd - k * 864e5 : null }));
+  const amtOf = (v, k) => { const a = v[QPE_DAYS[k - 1]], b = k > 1 ? v[QPE_DAYS[k - 2]] : 0; return a == null || b == null ? null : Math.max(0, a - b); };
+  let top = 0.25;   // one scale for every day column in the table
+  P.forEach(p => { const c = QPEC[p.name]; if (!c || !c.v) return; days.forEach(d => { top = Math.max(top, amtOf(c.v, d.k) || 0); }); top = Math.max(top, c.v[QPE_NOW] || 0); });
+  const col = (a, now) => `<div class="pd${now ? ' now' : ''}"><span class="col" style="height:${Math.round(Math.min(a, top) / top * 40)}px"></span><span>${a > 0 ? amtTxt(a, 2).replace(' in', '').replace(' mm', '') : '0'}</span></div>`;
+  const track = pct => `<span class="rtrack"><span class="fill" style="width:${Math.min(pct, 300) / 3}%"></span><span class="norm"></span>${pct > 300 ? '<span class="more">▶</span>' : ''}</span>`;
+  const hd = d => d.start ? `<div class="h c">${WK[new Date(d.start).getDay()]}<br>${new Date(d.start).getDate()}</div>` : '<div class="h c">…</div>';
+  let h = `<div class="h"></div><div class="h">Total, up to now</div>` + days.map(hd).join('') + `<div class="h c">Today<br>so far</div><div class="h">Usual for the 7 days</div>`;
+  P.forEach(p => {
+    const c = QPEC[p.name], d = here ? ` <span class="sec"><span class="arrow" style="display:inline-block;transform:rotate(${Math.round(bearing(here, p))}deg)">▲</span> ${Math.round(miles(here, p))} mi</span>` : '';
+    h += `<div><b>${esc(p.name)}</b>${d}</div>`;
+    if (!c) { h += `<div class="sec" style="grid-column:span 10">${p.lat == null ? 'No position for this place, so nothing to measure.' : 'Fetching…'}</div>`; return; }
+    if (c.err) { h += `<div class="sec" style="grid-column:span 10">Could not fetch: ${esc(c.err)}</div>`; return; }
+    const v = c.v, w7 = v[QPE_DAYS[6]], now = v[QPE_NOW];
+    if (w7 == null) { h += '<div class="sec" style="grid-column:span 10">No measured data here: the Weather Service covers the lower 48 states, Alaska and Puerto Rico.</div>'; return; }
+    // Alaska and Puerto Rico have the day totals but no today so far (checked 2026-11-01): the total is then to 5 AM
+    const n = v[QPE_NORM], pct = n > 0 ? Math.round(w7 / n * 100) : null;
+    h += `<div class="tot"><b>${amtTxt(w7 + (now || 0), 2)}</b>${now == null ? `<div class="sec">to ${dayEnd ? clock(dayEnd) : '5 AM'}</div>` : ''}</div>`
+      + days.map(dd => col(amtOf(v, dd.k) || 0)).join('') + (now == null ? '<div class="pd sec" title="Not measured here yet today">–</div>' : col(now, true))
+      + (pct == null ? '<div class="sec">Usual: none</div>' : `<div><b>${pct}%</b> of usual${track(pct)}<span class="sec">${amtTxt(w7, 2)} vs ${amtTxt(n, 2)}</span></div>`);
+  });
+  $('pt').innerHTML = h;
+  const five = dayEnd ? clock(dayEnd) : '5 AM';
+  $('pkeys').innerHTML = `<div class="ckey">Each day runs from ${five} to ${five} the next morning (12:00 UTC, the Weather Service's day); the day shown is the one it starts on. <span class="pd now" style="display:inline-flex"><span class="col" style="height:12px"></span></span> Today so far: since ${five}.</div>`
+    + `<div class="ckey">Usual: ${track(100)} the white mark is the usual amount for those 7 days (1991–2020, PRISM), against the 7 days to ${five} today.</div>`
+    + `<div class="ckey">Units: ${unitsCtl()}</div>`;
+  $('pnote').textContent = `Measured: radar, rain and snow gauges and satellite, combined by the National Weather Service River Forecast Centers on a grid of about 2.5 miles (4 km); melted snow counts as water. `
+    + (dayEnd ? `Days to ${when(dayEnd)}; today to about ${nowEnd ? when(nowEnd) : '?'}. ` : '') + (dayEnd ? `The day totals may be revised until about ${clock(dayEnd + 9 * 36e5)} (21:00 UTC). ` : '') + 'Source: NWS map service obs/rfc_qpe (water.noaa.gov).';
+  fitPrecip();
+}
+function fitPrecip() { const t = $('pt'); if ($('pPrecip').hidden) return; t.style.maxHeight = Math.max(160, window.innerHeight - (t.getBoundingClientRect().top + window.scrollY) - 8) + 'px'; }
+
 // ---------- Options: each setting with a small live sample (R30) ----------
 const sel = (id, list, val) => `<select id="${id}">${list.map(o => `<option value="${o.k}"${o.k === val ? ' selected' : ''}>${o.name}</option>`).join('')}</select>`;
 const toggle = (id, what, on) => `<label class="ck"><input type="checkbox" id="${id}"${on ? ' checked' : ''}>${what}</label>`;   // JG: "Stop the ON stuff, just add checkboxes"
@@ -1938,12 +2032,12 @@ if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues && w
 ['resize', 'online', 'offline'].forEach(ev => window.addEventListener(ev, drawDevice));
 if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', drawDevice);
 
-function refresh() { drawUnits(); drawFt(); drawTable(); drawKey(); drawFcst(); drawClim(); drawSets(); drawProfiles(); showRating(); autoCheck(); alertCheck(); }
+function refresh() { drawUnits(); drawFt(); drawTable(); drawKey(); drawFcst(); drawClim(); drawPrecip(); drawSets(); drawProfiles(); showRating(); autoCheck(); alertCheck(); }
 $('privBtn').addEventListener('click', () => {   // 0.65.1: the privacy policy opens below its button, on this page
   const b = $('privBtn'), open = $('priv').hidden;
   $('priv').hidden = !open; b.classList.toggle('on', open); b.setAttribute('aria-expanded', String(open));
 });
-const VERSION = '0.65.6', VERSION_DATE = '2026-11-01';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
+const VERSION = '0.66', VERSION_DATE = '2026-11-01';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
 $('brand').textContent = `WxTable ${VERSION}`;
 $('aboutName').textContent = `WxTable™ v${VERSION} · ${VERSION_DATE}`;   // ™ on About only (0.65)   // the Rydn format, as DoStack's About
 $('strip').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; save(); showTab(); });
