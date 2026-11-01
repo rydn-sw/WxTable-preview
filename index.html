@@ -2,9 +2,11 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>WxTable 0.65.1</title>
+<title>WxTable 0.65.2</title>
 <style>
-/* WxTable 0.65.1 (2026-11-01): the Rydn Privacy Policy, version 5, inside About (JG: "Use this privacy language:
+/* WxTable 0.65.2 (2026-11-01): search engines may list the site (JG: "Yes, allow listing"; "Yes, publish 0.65.2"):
+   the site builder no longer adds a no-index line. The page itself is as in 0.65.1.
+   0.65.1 (2026-11-01): the Rydn Privacy Policy, version 5, inside About (JG: "Use this privacy language:
    Rydn License and Safety SPEC_v15.md"; "About: full policy inside"): the Privacy policy button opens the whole
    policy below it, word for word from that spec's Appendix C (made by tools/insert_privacy_v01.py); the link to
    rydnsoftware.com/privacy/ stays beside it.
@@ -1905,7 +1907,7 @@ $('privBtn').addEventListener('click', () => {   // 0.65.1: the privacy policy o
   const b = $('privBtn'), open = $('priv').hidden;
   $('priv').hidden = !open; b.classList.toggle('on', open); b.setAttribute('aria-expanded', String(open));
 });
-const VERSION = '0.65.1', VERSION_DATE = '2026-11-01';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
+const VERSION = '0.65.2', VERSION_DATE = '2026-11-01';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
 $('brand').textContent = `WxTable ${VERSION}`;
 $('aboutName').textContent = `WxTable™ v${VERSION} · ${VERSION_DATE}`;   // ™ on About only (0.65)   // the Rydn format, as DoStack's About
 $('strip').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; save(); showTab(); });
