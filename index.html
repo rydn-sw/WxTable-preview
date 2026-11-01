@@ -2,7 +2,6 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="description" content="Remember those weather tables in the back of the newspaper, which show weather by cities? Now you can create your own for your favorite places.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://wxtable.rydnsoftware.com/">
 <meta property="og:title" content="WxTable">
 <meta property="og:description" content="Remember those weather tables in the back of the newspaper, which show weather by cities? Now you can create your own for your favorite places.">
 <meta property="og:image" content="https://wxtable.rydnsoftware.com/og.png">
@@ -12,9 +11,11 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>WxTable 0.65.3</title>
+<title>WxTable 0.65.4</title>
 <style>
-/* WxTable 0.65.3 (2026-11-01): the published site gets its own link card (JG: "FIX IT NOW"): title, description (JG's
+/* WxTable 0.65.4 (2026-11-01): the link card no longer names the bare site as its address (og:url), so Facebook keeps a
+   sent link's #s= code and the card opens the sent places (JG: "I want the sent places"). The page itself is as in 0.65.1.
+   0.65.3 (2026-11-01): the published site gets its own link card (JG: "FIX IT NOW"): title, description (JG's
    promo text, SRD 1a) and a picture of the table, added by the site builder; Facebook had shown the privacy policy's
    first paragraph as the description. The page itself is as in 0.65.1.
    0.65.2 (2026-11-01): search engines may list the site (JG: "Yes, allow listing"; "Yes, publish 0.65.2"):
@@ -1920,7 +1921,7 @@ $('privBtn').addEventListener('click', () => {   // 0.65.1: the privacy policy o
   const b = $('privBtn'), open = $('priv').hidden;
   $('priv').hidden = !open; b.classList.toggle('on', open); b.setAttribute('aria-expanded', String(open));
 });
-const VERSION = '0.65.3', VERSION_DATE = '2026-11-01';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
+const VERSION = '0.65.4', VERSION_DATE = '2026-11-01';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
 $('brand').textContent = `WxTable ${VERSION}`;
 $('aboutName').textContent = `WxTable™ v${VERSION} · ${VERSION_DATE}`;   // ™ on About only (0.65)   // the Rydn format, as DoStack's About
 $('strip').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; save(); showTab(); });
