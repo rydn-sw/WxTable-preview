@@ -11,9 +11,13 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>WxTable 0.65.4</title>
+<title>WxTable 0.65.5</title>
+<link rel="icon" type="image/png" sizes="32x32" href="WxTable_favicon_32_v01.png">
 <style>
-/* WxTable 0.65.4 (2026-11-01): the link card no longer names the bare site as its address (og:url), so Facebook keeps a
+/* WxTable 0.65.5 (2026-11-01): the WxTable icon from the Storefront repository, as the browser tab's icon and at the top
+   of About, and nowhere else (JG: "Use these Icon files"; "the icon should only be used on the About page and as the web
+   page icon").
+   0.65.4 (2026-11-01): the link card no longer names the bare site as its address (og:url), so Facebook keeps a
    sent link's #s= code and the card opens the sent places (JG: "I want the sent places"). The page itself is as in 0.65.1.
    0.65.3 (2026-11-01): the published site gets its own link card (JG: "FIX IT NOW"): title, description (JG's
    promo text, SRD 1a) and a picture of the table, added by the site builder; Facebook had shown the privacy policy's
@@ -545,6 +549,7 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
   </div>
 </div>
 <div id="pAbout" class="pane" hidden>
+  <img src="WxTable_icon_512_v01.png" alt="WxTable icon" width="64" height="64" style="display:block;margin-top:12px">   <!-- 0.65.5 -->
   <h2 id="aboutName"></h2>
   <div style="max-width:640px">Remember those weather tables in the back of the newspaper, which show weather by cities? Now you can create your own for your favorite places. Where next on the road? Track your options with fast visual scanning of trends and comparisons. See what just changed, and when the next forecast is expected.</div>
   <div style="max-width:640px;margin-top:8px">Great for travelers, drivers, flight crews, extended families, dispatch centers, ops centers, and more! Show it on your phone, tablet, computer, TV, or the Big Board. Excellent use for older devices sitting in a drawer.</div>
@@ -1921,7 +1926,7 @@ $('privBtn').addEventListener('click', () => {   // 0.65.1: the privacy policy o
   const b = $('privBtn'), open = $('priv').hidden;
   $('priv').hidden = !open; b.classList.toggle('on', open); b.setAttribute('aria-expanded', String(open));
 });
-const VERSION = '0.65.4', VERSION_DATE = '2026-11-01';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
+const VERSION = '0.65.5', VERSION_DATE = '2026-11-01';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
 $('brand').textContent = `WxTable ${VERSION}`;
 $('aboutName').textContent = `WxTable™ v${VERSION} · ${VERSION_DATE}`;   // ™ on About only (0.65)   // the Rydn format, as DoStack's About
 $('strip').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; save(); showTab(); });
