@@ -3,9 +3,20 @@
 <meta name="robots" content="noindex">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>WxTable 0.64.1</title>
+<title>WxTable 0.64.2</title>
 <style>
-/* WxTable 0.64.1 (2026-11-01): three fixes from the review before publishing 0.64: an alert that came or went no longer
+/* WxTable 0.64.2 (2026-11-01): the forecast line wraps better (JG: "Wrapping needs to be improved"): when the days
+   chooser and arrows move into its row, the forecast text takes the full width on its own line and the buttons sit in
+   a row under it; a value ("2 h 28 min", a date, a time) never breaks. An advisory is an outlined diamond, the size
+   of a watch's triangle (JG: "Watch and Advisory symbols are indistinguishable"); alerts module wxt_alerts_v04.js.
+   F Advanced graphics, as chosen in WxTable_v64.2_Mockup_v03.html: on a snow day the precip column is filled with white *
+   (JG: "add * symbol to blue bar for snow"; "fill the bar with asterisks"), one * above a column too short for any; the
+   amount, level and blue at the temperatures' size, left of the column at its base when nothing is there (JG: "add option
+   to put amount inside the blue bar: if there is space"; "to the left of the column at the base"); the gust speed, level,
+   in the middle of the gust line on a black box when the line is long enough (JG: "add option to put wind speed across
+   the yellow bar: if there is space"; "place it in the middle of the bar with black background for the text"). Both are
+   settings under Options and in the Explainer, on to start (JG: "Both on").
+   0.64.1 (2026-11-01): three fixes from the review before publishing 0.64: an alert that came or went no longer
    redraws while someone types or has a chooser open (it waits, as the forecast reload does); each alert check gives up
    after 10 seconds, so a check that never answers cannot stop alert checking; a forecast model with no run interval is
    skipped instead of hanging the page.
@@ -212,7 +223,8 @@ a { color:var(--lo); }
 .strip .asof { margin-left:auto; color:var(--sec); font-size:10px; overflow:hidden; text-overflow:ellipsis; }
 /* forecast time (R65): when the forecast was made and when the next one is due, over the table */
 .ft { display:flex; flex-wrap:wrap; align-items:center; gap:3px 12px; padding:3px 4px; font-size:12px; color:var(--sec); }
-.ft b { color:#fff; font-weight:600; }
+.ft b { color:#fff; font-weight:600; white-space:nowrap; }
+.ft .nw { white-space:nowrap; }   /* a date or time never breaks (0.64.2) */
 .ftl { display:flex; flex-wrap:wrap; align-items:center; gap:2px 12px; font-size:12px; color:var(--sec); padding:2px 4px; }
 .ftl b { color:#fff; font-weight:600; }
 .ftl.on { outline:1px solid var(--hi); }   /* the style in use */
@@ -261,9 +273,9 @@ a { color:var(--lo); }
 .c.one .r { font-size:11px; }
 .c.one .w { font-size:11px; margin-left:auto; }
 .tri { position:absolute; top:1px; right:3px; color:var(--hi); font-size:13px; line-height:1; }
-.tri.k1 { font-size:9px; top:2px; }
+.tri.k1 { font-size:12px; }   /* the advisory's diamond, as large as a watch's triangle (0.64.2) */
 .c.one .tri { position:static; font-size:11px; margin-left:-1px; }
-.c.one .tri.k1 { font-size:8px; }
+.c.one .tri.k1 { font-size:10px; }
 .empty { padding:16px 10px; font-size:14px; color:var(--sec); }
 #ab { position:fixed; left:0; right:0; bottom:0; padding:6px 8px; font-size:12px; color:#000; background:var(--hi); font-weight:600; cursor:pointer; z-index:5; }
 #ab:empty { display:none; }
@@ -383,6 +395,8 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
 #pTable.ftbottom .ftrow { order:2; }   /* the forecast time line under the table (0.50) */
 #pTable.ftbottom.ftshort .ftrow { order:0; }   /* the table taller than the screen: at the top, so Refresh stays in reach (0.64) */
 .ftrow .ft { flex:1 1 auto; min-width:0; }
+.ftrow.crowd { flex-wrap:wrap; }   /* the days chooser and arrows moved here: the text gets its own line (0.64.2) */
+.ftrow.crowd .ft { flex-basis:100%; }
 .ftrow .refresh { flex:0 0 auto; font-size:12px; padding:2px 10px; margin:2px 4px 2px 0; }   /* fetch again (0.57) */
 .nav { display:flex; align-items:center; gap:2px; }
 .ftrow #ndays { flex:0 0 auto; margin-right:4px; }   /* the days chooser, moved here when the top row is too narrow (0.63) */
@@ -509,7 +523,7 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
 <script src="data/wx_climate_t12_2026-10-31.js"></script>   <!-- 7, 30, 90 days, 6 and 12 months, year to date -->
 <script src="data/wx_normals_t_2026-10-29.js"></script>
 <script src="data/wx_runs_2026-10-29.js"></script>
-<script src="wxt_alerts_v03.js"></script>
+<script src="wxt_alerts_v04.js"></script>
 <script>
 // 0.56: live data (JG: "I want a LIVE prototype"; "Ready for live data"). Before the main script starts, ask Open-Meteo for the
 // forecast of every place (one request), the National Weather Service for each place's alerts, and Open-Meteo for the model
@@ -775,7 +789,7 @@ function skySvg(kind) {   // 30 x 24 units; yellow sun, gray cloud, blue rain, w
 const MISS = [3.1, 3.1, 3.5, 3.9, 4.4, 5.1, 5.7, 6.6];   // typical miss of the high (°F) by days ahead, 0 = today (2016 data, research S17)
 const missAt = lead => MISS[Math.min(lead, MISS.length - 1)];   // beyond day 7: held at day 7's, a floor, not a measurement
 // JG's choices as the defaults ("Save my current checkboxes as the defaults", 2026-10-29, read from his browser at 2:02 PM)
-const EDEF = { bar: true, maxline: true, precip: true, gust: true, usual: false, comfort: false, fuzz: false, prev: false, hours: true, best: false, nums: true, comfLo: 65, comfHi: 80 };
+const EDEF = { bar: true, maxline: true, precip: true, gust: true, usual: false, comfort: false, fuzz: false, prev: false, hours: true, best: false, nums: true, amt: true, gnum: true, comfLo: 65, comfHi: 80 };   // amt, gnum: 0.64.2
 const EO = () => Object.assign({}, EDEF, S.e || {});
 const usualOf = (p, iso) => { const n = window.WXN && WXN.places[p.name]; return n ? n[iso.slice(5)] : null; };
 const leadOf = iso => Math.round((Date.parse(iso) - Date.parse(TODAY)) / 864e5);
@@ -808,9 +822,24 @@ function eSvg(d, sc) {
   if (wet) {
     const h = Math.max(2, Math.min(d.q || 0, 1) * H), op = d.past ? 1 : 0.3 + 0.7 * d.pp / 100;
     g += `<rect x="45" y="${top + H - h}" width="12" height="${h}" fill="#6CB8FF" opacity="${op.toFixed(2)}"/>`;
+    const yt = top + H - h;
+    if (d.snow) {   // a snow day (0.64.2): the column filled with *, 7 units apart; too short for one: one * just above it
+      const n = Math.floor((h - 2) / 7);
+      if (n >= 1) for (let i = 0; i < n; i++) g += `<text x="51" y="${yt + 8 + i * 7}" font-size="9" fill="#fff" text-anchor="middle">*</text>`;
+      else g += `<text x="51" y="${Math.max(9, yt - 1.5)}" font-size="9" fill="#fff" text-anchor="middle">*</text>`;
+    }
+    if (o.amt && d.q != null) {   // the amount, left of the column at its base, no unit (the key says which); not where the low's bar or number is (0.64.2)
+      const r = MM() ? Math.round(d.q * 25.4) : Math.round(d.q * 100) / 100, base = top + H - 1;   // rounded first: 0.996 is 1.0, not ".00"
+      const t = MM() ? String(r) : r < 1 ? r.toFixed(2).slice(1) : r.toFixed(1);
+      if (r > 0 && !(o.bar && d.lo != null && Math.abs(cy(d.lo) + 3 - base) < 10)) g += `<text x="44" y="${base}" font-size="9" fill="#6CB8FF" font-weight="700" text-anchor="end">${t}</text>`;
+    }
   }
   if (o.gust && d.g >= GUST_MIN) { const len = Math.max(4, cl((d.g - GUST_MIN) / (GUST_FULL - GUST_MIN)) * 40);
-    g += `<line x1="66" x2="66" y1="${top + H}" y2="${top + H - len}" stroke="${d.g >= GUST_LIMIT ? '#FFD700' : '#fff'}" stroke-width="3"/>`; }
+    g += `<line x1="66" x2="66" y1="${top + H}" y2="${top + H - len}" stroke="${d.g >= GUST_LIMIT ? '#FFD700' : '#fff'}" stroke-width="3"/>`;
+    if (o.gnum && len >= 12) {   // the speed, level, in the middle of the line on a black box (0.64.2)
+      const t = String(d.g), w = t.length * 4.6 + 2, my = top + H - len / 2;
+      g += `<rect x="${66 - w / 2}" y="${my - 4.5}" width="${w}" height="9" fill="#000"/><text x="66" y="${my + 2.6}" font-size="7.5" fill="${d.g >= GUST_LIMIT ? '#FFD700' : '#fff'}" font-weight="700" text-anchor="middle">${t}</text>`;
+    } }
   if (o.hours && d.hrs && d.hrs.length) {   // 24 ticks: when in the day the precip is expected (or fell)
     const w = 79 / 24;
     d.hrs.forEach((h, i) => { const on = d.past ? (h[4] || 0) >= 0.01 : (h[2] || 0) >= rMin(); if (on) g += `<rect x="${(i * w).toFixed(1)}" y="51" width="${(w - 0.6).toFixed(1)}" height="4" fill="#6CB8FF" opacity="${d.past ? 1 : (0.3 + 0.7 * (h[2] || 0) / 100).toFixed(2)}"/>`; });
@@ -820,7 +849,7 @@ function eSvg(d, sc) {
 }
 function eData(p, iso) {
   const [, hi, lo, pp, q, g] = p.byDay[iso] || NODAY, n = usualOf(p, iso), pr = PREV[p.name] && PREV[p.name][iso];
-  return { hi, lo, pp, q, g, past: iso < TODAY, nhi: n ? n[0] : null, nlo: n ? n[1] : null, prevHi: S.changes && iso >= TODAY && pr ? pr[1] : null,
+  return { hi, lo, pp, q, g, snow: SKY(codeOf(p, iso)) === 'snow', past: iso < TODAY, nhi: n ? n[0] : null, nlo: n ? n[1] : null, prevHi: S.changes && iso >= TODAY && pr ? pr[1] : null,
     miss: iso >= TODAY ? missAt(leadOf(iso)) : 0, hrs: (p.hours || []).filter(h => h[0].slice(0, 10) === iso) };
 }
 let ESCALE = { lo: 30, hi: 90 };
@@ -897,10 +926,10 @@ const ftPart = r => Math.max(0, Math.min(1, (COPY - r.made) / (r.due - r.made)))
 const ring = f => { const r = 6, c = 2 * Math.PI * r;
   return `<svg class="ftring" width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="${r}" fill="none" stroke="#333" stroke-width="3"/><circle cx="8" cy="8" r="${r}" fill="none" stroke="var(--sec)" stroke-width="3" stroke-dasharray="${(f * c).toFixed(2)} ${c.toFixed(2)}" transform="rotate(-90 8 8)"/></svg>`; };
 function ftHtml(st) {
-  const R = ftRuns(), day = `<span><b>Forecast</b> ${WK[new Date(COPY).getDay()]} ${dayOf(COPY)}</span>`;
+  const R = ftRuns(), day = `<span><b>Forecast</b> <span class="nw">${WK[new Date(COPY).getDay()]} ${dayOf(COPY)}</span></span>`;
   if (!R.length) return '<span>No forecast times with this copy.</span>';
   if (st == 1) return day + R.map(r => `<span${ftTip(r)}>${r.what}: made <b>${clockD(r.made)}</b>, next about <b>${clockD(r.due)}</b></span>`).join('');
-  if (st == 2) return `<span><b>Forecast</b> as of ${WK[new Date(COPY).getDay()]} ${when(COPY)}</span>` +
+  if (st == 2) return `<span><b>Forecast</b> as of <span class="nw">${WK[new Date(COPY).getDay()]} ${when(COPY)}</span></span>` +
     R.map(r => `<span${ftTip(r)}>${r.what}: <b>${span(COPY - r.made)}</b> old, a new one in about <b>${span(r.due - COPY)}</b></span>`).join('');
   if (st == 3) return day + R.map(r => { const f = (ftPart(r) * 100).toFixed(1);
     return `<span${ftTip(r)}>${r.what}: made ${clockD(r.made)}<span class="ftbar"><span class="fill" style="width:${f}%"></span><span class="now" style="left:calc(${f}% - 1px)"></span></span>next ${clockD(r.due)}</span>`; }).join('');
@@ -1067,6 +1096,7 @@ function fitStrip() {
   if (over() && !$('nav').hidden) $('ftrow').appendChild($('nav'));   // then the arrows go to the end of the forecast line
   if (over() && S.tab === 'table') $('ftrow').insertBefore($('ndays'), $('nav').parentNode === $('ftrow') ? $('nav') : null);   // then the days chooser, before them (0.63)
   if (over()) strip.classList.add('tight');
+  $('ftrow').classList.toggle('crowd', $('ndays').parentNode === $('ftrow') || $('nav').parentNode === $('ftrow'));   // 0.64.2
 }
 $('other').addEventListener('change', () => { const v = $('other').value; if (!v) return; S.tab = v; save(); showTab(); });
 function showTab() {
@@ -1311,7 +1341,7 @@ function drawKey() {
       `in blue, shown from a ${rMin()}% chance${aMin() ? ` with at least ${aMinTxt(aMin())}` : ''}: ${{ chance: 'the chance', amount: `the amount for the day, ${MM() ? 'millimeters' : 'inches'}`, both: `the chance and the amount for the day, ${MM() ? 'millimeters' : 'inches'}` }[S.rainshow]}. Bold at 50% or more.`);
     head('Also shown');
     k(ebs('part', 58, 40, '<span></span><span class="w">18</span>'), 'Wind gusts', `in white, mph, shown from ${GUST_MIN}; ${GUST_LIMIT} mph or more on yellow.`);
-    k(sample('80px', sbox(shl(62, 45, '<span></span><span></span>') + '<span class="tri k3">▲</span>')), 'Weather Service alerts', '▲ warning, △ watch, small △ advisory. Tap the box for the details.');
+    k(sample('80px', sbox(shl(62, 45, '<span></span><span></span>') + '<span class="tri k3">▲</span>')), 'Weather Service alerts', '▲ warning, △ watch, ◇ advisory. Tap the box for the details.');
     k(today, 'Today', 'yellow heading, and a yellow edge down the column. Weekend days in white.');
     k(past, 'Past days', `dimmed, with a slanted gray heading: scroll the table left to see them. The symbol and temperatures are what happened, with the precip that fell in ${MM() ? 'millimeters' : 'inches'}.`);
   } else if (lay === 'E') {
@@ -1324,12 +1354,14 @@ function drawKey() {
     k(eSample({ bar: true, prev: true }), 'The high in the previous forecast', 'the dashed line, when it has moved.', eck('prev'));
     k(eSample({ bar: true, nums: true }), 'Temperatures as numbers', 'beside the bar.', eck('nums'));
     head('Precipitation');
-    k(eSample({ precip: true }), 'Precipitation', 'the blue column: its height is the amount (1 in fills it), how solid it is, the chance. On past days it is solid: what fell.', eck('precip'));
+    k(eSample({ precip: true }), 'Precipitation', 'the blue column: its height is the amount (1 in fills it), how solid it is, the chance. On past days it is solid: what fell. On a snow day it is filled with *.', eck('precip'));
+    k(eSample({ precip: true, amt: true }), 'The amount', `left of the column at its base, in ${MM() ? 'millimeters' : 'inches'}; not shown where the low temperature is.`, eck('amt'));
     k(eSample({ precip: true, hours: true }), 'When in the day', 'ticks along the bottom for the hours with precip (here, noon to 5 PM).', eck('hours'));
     head('Also shown');
     k(eSample({ gust: true }), 'Wind gusts', `the line at the right: longer for stronger, yellow at ${GUST_LIMIT} mph or more; none below ${GUST_MIN} mph.`, eck('gust'));
+    k(eSample({ gust: true, gnum: true }), 'The gust speed', 'in mph, in the middle of the line, when the line is long enough.', eck('gnum'));
     k(eSample({ best: true }), 'Each place\'s best day ahead', 'the yellow square. A placeholder rule until you set one: temperature, then dry, then calm.', eck('best'));
-    k(sample('80px', sbox('', '', 'g') + '<span class="tri k3">▲</span>'), 'Weather Service alerts', '▲ warning, △ watch, small △ advisory. Tap the box for the details.');
+    k(sample('80px', sbox('', '', 'g') + '<span class="tri k3">▲</span>'), 'Weather Service alerts', '▲ warning, △ watch, ◇ advisory. Tap the box for the details.');
     k(today, 'Today', 'yellow heading, and a yellow edge down the column. Weekend days in white.');
     k(past, 'Past days', 'dimmed, with a slanted gray heading: scroll the table left to see them. The bar is what happened; the blue column, what fell.');
   } else {
@@ -1348,7 +1380,7 @@ function drawKey() {
     head('Also shown');
     k(sample('80px', sbox(shl(58, 40, '<span></span><span class="w">18</span>'))), 'Wind gusts', `in white, mph, shown from ${GUST_MIN}; ${GUST_LIMIT} mph or more on yellow.`);
     k(sample('80px', sbox(shl(68, 45, '<span></span><span></span>'))), 'A clear day', 'nothing but the temperatures: dry and calm.');
-    k(sample('80px', sbox(shl(62, 45, '<span></span><span></span>') + '<span class="tri k3">▲</span>')), 'Weather Service alerts', '▲ warning, △ watch, small △ advisory. Tap the box for the details.');
+    k(sample('80px', sbox(shl(62, 45, '<span></span><span></span>') + '<span class="tri k3">▲</span>')), 'Weather Service alerts', '▲ warning, △ watch, ◇ advisory. Tap the box for the details.');
     k(today, 'Today', 'yellow heading, and a yellow edge down the column. Weekend days in white.');
     k(past, 'Past days', `dimmed, with a slanted gray heading: scroll the table left to see them. They show what happened, with the precip that fell in ${MM() ? 'millimeters' : 'inches'}.`);
   }
@@ -1457,7 +1489,9 @@ function drawSets() {
     ['F: temperature bar', toggle('ebar', 'The bar from low to high', EO().bar), eSample({ bar: true })],
     ['F: warmest-high line', toggle('emax', 'A faint gray line across each row at that place\'s highest temperature', EO().maxline), eSample({ bar: true, maxline: true })],
     ['F: precipitation', toggle('eprecip', 'The blue column: amount and chance', EO().precip), eSample({ precip: true })],
+    ['F: precip amount', toggle('eamt', 'Left of the column at its base', EO().amt), eSample({ precip: true, amt: true })],
     ['F: wind gusts', toggle('egust', 'The line at the right', EO().gust), eSample({ gust: true })],
+    ['F: gust speed', toggle('egnum', 'In the middle of the line', EO().gnum), eSample({ gust: true, gnum: true })],
     ['F: usual range', toggle('eusual', 'Gray band: the usual high to low for the date (1991–2020)', EO().usual), eSample({ usual: true })],
     ['F: comfortable', `<span>${toggle('ecomf', 'Yellow tint:', EO().comfort)} ${sel('ecl', [50, 55, 60, 65, 70].map(v => ({ k: String(v), name: v + '°F' })), String(EO().comfLo))} to ${sel('ech', [75, 80, 85, 90].map(v => ({ k: String(v), name: v + '°F' })), String(EO().comfHi))}</span>`, eSample({ comfort: true })],
     ['F: fuzzier further out', toggle('efuzz', 'Faint ends: the typical miss for that many days ahead', EO().fuzz), eSample({ fuzz: true })],
@@ -1489,6 +1523,7 @@ function drawSets() {
     $('enums').onchange = () => eset('nums', $('enums').checked);
     $('ebar').onchange = () => eset('bar', $('ebar').checked); $('emax').onchange = () => eset('maxline', $('emax').checked); $('eprecip').onchange = () => eset('precip', $('eprecip').checked);
     $('egust').onchange = () => eset('gust', $('egust').checked);
+    $('eamt').onchange = () => eset('amt', $('eamt').checked); $('egnum').onchange = () => eset('gnum', $('egnum').checked);   // 0.64.2
   }
 }
 // Save Profile (R35): a name, with the date and time recorded automatically
@@ -1527,7 +1562,7 @@ $('rname').addEventListener('input', () => { S.raterName = $('rname').value; sav
 const ESAMPLE = { hi: 66, lo: 44, pp: 70, q: 0.35, g: 24, past: false, nhi: 63, nlo: 38, prevHi: 71, miss: 3.9, best: true,
   hrs: Array.from({ length: 24 }, (_, i) => ['', 0, i >= 12 && i <= 17 ? 70 : 5, 0, 0]) };
 function eSample(only) {   // with `only`, just that part switched on (and the bar), to show what it adds
-  const keep = S.e; if (only) S.e = Object.assign({}, EDEF, { bar: false, maxline: false, precip: false, gust: false, usual: false, comfort: false, fuzz: false, prev: false, hours: false, best: false, nums: false }, only, { comfLo: EO().comfLo, comfHi: EO().comfHi });
+  const keep = S.e; if (only) S.e = Object.assign({}, EDEF, { bar: false, maxline: false, precip: false, gust: false, usual: false, comfort: false, fuzz: false, prev: false, hours: false, best: false, nums: false, amt: false, gnum: false }, only, { comfLo: EO().comfLo, comfHi: EO().comfHi });
   const svg = eSvg(Object.assign({}, ESAMPLE, { prevHi: (only ? only.prev : EO().prev) ? 71 : null }), { lo: 30, hi: 80, max: 74 });
   S.e = keep;
   return `<div class="sample"><div class="t" style="grid-template-columns:79px;--rh:54px;--line:#555"><div class="c g">${svg}</div></div></div>`;
@@ -1640,7 +1675,7 @@ if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues && w
 if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', drawDevice);
 
 function refresh() { drawUnits(); drawFt(); drawTable(); drawKey(); drawFcst(); drawClim(); drawSets(); drawProfiles(); showRating(); autoCheck(); alertCheck(); }
-const VERSION = '0.64.1', VERSION_DATE = '2026-11-01';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
+const VERSION = '0.64.2', VERSION_DATE = '2026-11-01';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
 $('brand').textContent = `WxTable ${VERSION}`;
 $('aboutName').textContent = `WxTable v${VERSION} · ${VERSION_DATE}`;   // the Rydn format, as DoStack's About
 $('strip').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; save(); showTab(); });
