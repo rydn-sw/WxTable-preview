@@ -3,9 +3,24 @@
 <meta name="robots" content="noindex">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>WxTable 0.64.2</title>
+<title>WxTable 0.65.1</title>
 <style>
-/* WxTable 0.64.2 (2026-11-01): the forecast line wraps better (JG: "Wrapping needs to be improved"): when the days
+/* WxTable 0.65.1 (2026-11-01): the Rydn Privacy Policy, version 5, inside About (JG: "Use this privacy language:
+   Rydn License and Safety SPEC_v15.md"; "About: full policy inside"): the Privacy policy button opens the whole
+   policy below it, word for word from that spec's Appendix C (made by tools/insert_privacy_v01.py); the link to
+   rydnsoftware.com/privacy/ stays beside it.
+   0.65 (2026-11-01): sending places as a short link (R70; docs/DESIGN_WxTable_ShareAbout_v03.md; mockup
+   WxTable_v65_Mockup_v02.html). Send link beside the places list (asks for a name, "My places" filled in), beside each
+   saved set and beside each saved profile; the link is the page's address with #s= and an 8-character code, the places
+   or profile kept behind it by WxTable's link service (wxtable-links, a Cloudflare Worker), cleared after a year unopened.
+   Someone who never used WxTable in this browser sees what was sent at once (a profile with a "From a link" line);
+   anyone else is asked first and it is saved to Saved sets or Profiles. Everything from a link passes wxt_check_v01.js,
+   the same check the link service uses. From the 0.65 draft's review: one Load at a time; a Load replaces the list only
+   when every place is ready; a sent place named like a built-in one at another position gets "(sent)". About: the six
+   sections of WxTable_About_Mockup_v01.html (trademark sign, Support Rydn, Tell a friend with a QR code, Share on social
+   media, License and privacy, Credits), as drawn there. 0.65 is the number kept for link sharing (JG), with About (JG:
+   "With 0.65").
+   0.64.2 (2026-11-01): the forecast line wraps better (JG: "Wrapping needs to be improved"): when the days
    chooser and arrows move into its row, the forecast text takes the full width on its own line and the buttons sit in
    a row under it; a value ("2 h 28 min", a date, a time) never breaks. An advisory is an outlined diamond, the size
    of a watch's triangle (JG: "Watch and Advisory symbols are indistinguishable"); alerts module wxt_alerts_v04.js.
@@ -319,6 +334,17 @@ a { color:var(--lo); }
 .pl .d { color:var(--sec); font-size:12px; }
 input[type=checkbox] { width:20px; height:20px; accent-color:var(--hi); cursor:pointer; margin:0; }
 .del { font-size:12px; padding:2px 8px; margin-left:6px; }   /* next to the place (JG) */
+.sinbox, .namebox { border-left:3px solid var(--hi); padding:6px 10px; margin:6px 0 10px; max-width:720px; }   /* a sent link; the name to send (0.65) */
+.namebox input[type=text] { width:200px; }
+.bad { color:#ff9c9c; }
+.from { display:flex; align-items:center; gap:8px; padding:4px 8px; background:#1a1a00; border-bottom:1px solid var(--hi); font-size:13px; }   /* opened from a link (0.65) */
+.from button { margin-left:auto; font-size:12px; padding:1px 8px; }
+.crow { display:flex; flex-wrap:wrap; gap:6px; margin:6px 0; }   /* About's six sections (0.65) */
+.priv { max-width:640px; font-size:14px; border-left:3px solid var(--hi); padding:2px 10px; margin:6px 0 10px; }   /* the privacy policy inside About (0.65.1) */
+.priv h3 { font-size:15px; margin:6px 0; }
+.priv p { margin:0 0 8px; }
+.cqr svg { display:block; width:200px; height:200px; margin:6px 0; }
+.csoc img { height:18px; vertical-align:middle; margin-right:4px; }
 .addrow { border-left:3px solid var(--hi); padding:4px 8px; margin:6px 0; }
 .ck { display:flex; align-items:center; gap:8px; cursor:pointer; font-size:14px; }
 .dist { color:var(--sec); font-size:12px; white-space:nowrap; }
@@ -441,17 +467,22 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
     <div class="sec" id="awhere"></div>
   </div>
   <div class="sec" id="pmsg"></div>
+  <div id="sinbox" class="sinbox" hidden></div>   <!-- a set or profile sent as a link (0.65) -->
+  <div class="sec" id="inmsg"></div>
   <h2>Locations</h2>
   <div class="row2"><button class="btn" id="nearme">Near me</button><span class="sec" id="nearmsg"></span><label class="ck"><input type="checkbox" id="twu">Weather Underground links</label><span class="sec">WU ↗ beside each place: its 10-day forecast</span></div>
-  <div class="sec">Checked places are in the table. Drag ≡ to change the order.</div>
+  <div class="row2" style="margin:4px 0"><span class="sec">Checked places are in the table. Drag ≡ to change the order.</span><button class="btn" id="lsend">Send link</button></div>
+  <div class="namebox" id="lsbox" hidden><div class="sec">Name for what you send</div><div class="row2" style="margin-top:4px"><input type="text" id="lsname" maxlength="60" aria-label="Name for what you send"><button class="btn" id="lsgo">Send</button><button class="btn" id="lscancel">Cancel</button></div></div>
+  <div class="sec" id="lsmsg"></div>
   <div class="plist" id="plist"></div>
   <h2>Saved sets</h2>
   <div class="sec">Stored on this device, in this browser only.</div>   <!-- JG: "add a note that these are stored on your device" -->
   <div class="row2"><input type="text" id="sname" placeholder="Set name" aria-label="Set name"><input type="text" id="sdesc" placeholder="Description" aria-label="Set description"><button class="btn" id="ssave">Save set</button></div>
   <div id="slist"></div>
+  <div class="sec" id="smsg"></div>
 </div>
 
-<div id="pTable"><div class="ftrow" id="ftrow"><div class="ft" id="ft"></div><button class="refresh" id="refresh">Refresh</button></div><div class="tw" id="tw"><div class="t" id="t"></div></div></div>
+<div id="pTable"><div class="from" id="fromlink" hidden><span>From a link: <b id="fromname"></b></span><button id="fromclose">Close</button></div><div class="ftrow" id="ftrow"><div class="ft" id="ft"></div><button class="refresh" id="refresh">Refresh</button></div><div class="tw" id="tw"><div class="t" id="t"></div></div></div>
 
 <div id="pExpl" class="pane" hidden>
   <div class="preview" id="xpreview"></div>
@@ -487,6 +518,7 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
   <div class="sec">A profile keeps every setting, from every tab: the places, these table settings, the Climate columns, the units and the Weather Underground links. Stored on this device, in this browser only.</div>
   <div class="row2"><input type="text" id="pname" placeholder="Profile name" aria-label="Profile name"><button class="btn" id="psave">Save Profile</button></div>
   <div id="plistp"></div>
+  <div class="sec" id="pmsg2"></div>
   <div id="rateSec" hidden>   <!-- hidden for now (JG, 2026-10-30) -->
   <h2>Your rating of <span id="lname"></span></h2>
   <span class="stars" id="stars"></span>
@@ -505,6 +537,47 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
   <div style="max-width:640px">Your feedback, comments, and questions are welcome! We would love to hear how you used WxTable in your journeys.<br><a href="mailto:support@rydnsoftware.com">support@rydnsoftware.com</a></div>
   <h2>Website with more great apps for the road, and other uses too</h2>
   <div><a href="https://rydnsoftware.com" target="_blank" rel="noopener">https://rydnsoftware.com</a></div>
+
+  <!-- 0.65: six sections from WxTable_About_Mockup_v01.html (JG: "this looks good as a start"; "Yes, all six") -->
+  <h2>Support Rydn</h2>
+  <div>Like WxTable? Help fuel the next mile.</div>
+  <div class="crow"><button class="btn" disabled>Support Rydn</button></div>
+  <h2>Tell a friend</h2>
+  <div>Send the link by text, email or chat:</div>
+  <div class="crow"><button class="btn" disabled>Tell a friend…</button></div>
+  <div>In-person? Your friends can scan the QR code below</div>
+  <div class="cqr" role="img" aria-label="QR code for https://wxtable.rydnsoftware.com"><svg xmlns="http://www.w3.org/2000/svg" width="185" height="185" class="segno"><g transform="scale(5)"><path fill="#fff" d="M0 0h37v37h-37z"/><path class="qrline" stroke="#000" d="M4 4.5h7m2 0h2m1 0h1m1 0h1m1 0h1m1 0h3m1 0h7m-29 1h1m5 0h1m1 0h1m3 0h1m2 0h1m1 0h2m1 0h1m1 0h1m5 0h1m-29 1h1m1 0h3m1 0h1m1 0h5m2 0h1m6 0h1m1 0h3m1 0h1m-29 1h1m1 0h3m1 0h1m2 0h2m2 0h5m2 0h1m1 0h1m1 0h3m1 0h1m-29 1h1m1 0h3m1 0h1m5 0h1m1 0h4m1 0h1m2 0h1m1 0h3m1 0h1m-29 1h1m5 0h1m2 0h3m2 0h1m1 0h1m1 0h2m2 0h1m5 0h1m-29 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-19 1h2m1 0h3m1 0h2m1 0h1m-20 1h3m1 0h2m2 0h1m2 0h1m3 0h2m2 0h1m5 0h2m-27 1h1m2 0h2m2 0h1m2 0h5m2 0h7m1 0h1m1 0h1m-27 1h1m3 0h2m1 0h2m1 0h1m1 0h2m1 0h1m4 0h1m1 0h4m-26 1h1m2 0h1m1 0h1m2 0h2m1 0h4m1 0h2m3 0h2m3 0h1m-26 1h2m1 0h1m1 0h2m4 0h4m2 0h2m1 0h1m2 0h3m-29 1h5m2 0h2m1 0h2m1 0h1m1 0h2m2 0h1m2 0h2m1 0h4m-29 1h1m2 0h4m1 0h3m2 0h2m1 0h10m1 0h2m-29 1h3m5 0h1m4 0h2m1 0h1m1 0h5m1 0h2m1 0h2m-25 1h5m4 0h2m3 0h1m1 0h2m1 0h3m-25 1h2m1 0h1m2 0h1m1 0h4m3 0h1m3 0h2m1 0h1m-24 1h1m1 0h1m1 0h3m1 0h2m2 0h1m1 0h5m1 0h1m1 0h2m-21 1h2m7 0h3m1 0h2m1 0h1m1 0h3m1 0h2m-26 1h6m1 0h1m1 0h1m1 0h2m1 0h12m1 0h1m-21 1h1m9 0h3m3 0h2m2 0h1m-29 1h7m2 0h3m4 0h1m2 0h2m1 0h1m1 0h1m1 0h2m-28 1h1m5 0h1m1 0h4m1 0h2m3 0h1m1 0h1m3 0h1m-25 1h1m1 0h3m1 0h1m3 0h1m1 0h4m1 0h1m2 0h7m1 0h1m-29 1h1m1 0h3m1 0h1m1 0h1m2 0h1m1 0h4m2 0h1m4 0h2m2 0h1m-29 1h1m1 0h3m1 0h1m1 0h2m4 0h1m3 0h1m1 0h1m2 0h1m1 0h2m1 0h1m-29 1h1m5 0h1m1 0h7m1 0h1m1 0h3m3 0h2m1 0h1m-28 1h7m3 0h1m3 0h2m2 0h3m2 0h1m1 0h1m1 0h1"/></g></svg>
+</div>
+  <h2>Share on social media</h2>
+  <div>Post a link to WxTable:</div>
+  <div class="crow">
+    <button class="btn csoc" aria-label="Facebook" disabled><img alt="" src="data:image/png;base64,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"></button>
+    <button class="btn csoc" disabled><img alt="" src="data:image/png;base64,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">Reddit</button>
+    <button class="btn" disabled>X</button>
+    <button class="btn" disabled>Instagram · coming later</button>
+    <button class="btn" disabled>YouTube · coming later</button>
+  </div>
+  <h2>License and privacy</h2>
+  <div class="crow"><a class="btn" href="https://rydnsoftware.com/license/" target="_blank" rel="noopener">License</a> <button class="btn" id="privBtn" aria-expanded="false" aria-controls="priv">Privacy policy</button> <a class="btn" href="https://rydnsoftware.com/privacy/" target="_blank" rel="noopener">Privacy policy on rydnsoftware.com</a></div>
+  <div id="priv" class="priv" hidden>   <!-- 0.65.1: word for word from Rydn License and Safety SPEC_v15.md, Appendix C -->
+  <h3>Rydn Privacy Policy, version 5 (2026-11-01)</h3>
+  <p>Rydn apps keep most of your information on your phone, and Rydn collects data only in the cases listed below: DoStack's sync server, the optional announcement list, the WxTable website (its visit count and its Send link service), and the ordinary web requests any host sees. We do not run ads or crash reporting, and we do not sell personal information. We do not share it either, except with the services that run these parts for us, named below: our email service provider, GoatCounter and Cloudflare. This page says, app by app, what is kept and what leaves your phone.</p>
+  <p><b>All apps.</b> Nothing you enter in an app is sent to Rydn unless that app says so below. When you choose to export, share or email something, it goes where you send it (for example your Google Drive or an email you write). Some apps ask rydnsoftware.com whether a newer version exists; that request carries no personal information, but like any web request it reveals your device's IP address to the site's host (GitHub Pages). Every Rydn app allows Android's own backup, so your data can move with you to a new phone: if backup is on in your phone's settings, Android copies the app's data to your Google account. That is Google's service, under Google's policy; you can turn it off in Android's settings.</p>
+  <p><b>Level Best.</b> Its only use of the internet is the update check described above; it has no account and sends nothing else. If you turn on Save locations and record a leveling, it keeps the place you type, your remarks, the tilt and, if you allow location, your GPS position, on the phone (and in Android's backup, if it is on). On Android 11 and older the monitor phone asks for location because Android requires it to find Bluetooth devices; Level Best does not use it for anything else. The two phones exchange tilt, a random ID and the phone model over a Bluetooth link that is not paired or encrypted, so a nearby phone could see the ID and read the tilt and phone model.</p>
+  <p><b>Voygr.</b> Uses your precise location while it is open or recording a trip, to show speed, heading, elevation and distance. A detailed position log stays on the phone for up to 7 days. Trip totals (no positions) stay until you reset them. Speed-limit databases are downloaded from GitHub without your position.</p>
+  <p><b>Rydn Player.</b> Plays music from a folder you choose; files stay where they are. Keeps your star ratings, with file names and paths, on the phone. Reads the names of connected audio devices to pause when they disconnect; it does not keep or send them. Its only network request is the update check described above.</p>
+  <p><b>DoStack.</b> Keeps your lists on the phone. If you create or enter a sync key, your lists (item text, list names and times) and a random device ID are sent over an encrypted connection to a server Rydn runs on Oracle Cloud, so your devices can share them. The server records the IP address and time of each connection. It is backed up nightly, encrypted, to Backblaze B2, and backups are kept for up to 90 days. Anyone with your sync key can read that list; keep it private. To have your server data deleted, email support@rydnsoftware.com with your key.</p>
+  <p><b>Habits.</b> Keeps your plans, reminders and notes on the phone; reminders are scheduled on the phone. Nothing is sent to Rydn.</p>
+  <p><b>WxTable</b> (web, wxtable.rydnsoftware.com). Keeps your places and settings in your browser's own storage on your device, not in a cookie. To show the weather, your browser asks Open-Meteo and the US National Weather Service directly for the forecast, past weather and alerts at the places you list, so they see those positions and your device's IP address, under their own policies. Visits are counted by GoatCounter, which sets no cookie and stores no IP address: only daily totals of pages, browsers, systems, countries, languages and screen widths, and hourly totals of pages and the sites that linked to them. If you press Send link, the places (their names, positions and notes) or the profile you send are stored as plain text by a Rydn service on Cloudflare, behind a short code; anyone with the link can read them, and Cloudflare, like any web host, sees the address of the device that connects. A link is deleted after a year in which nobody opened it. To limit how many links can be made, the service counts each day's links under a scrambled (hashed) form of your device's network address, never the address itself, and deletes the counts after about two days. To have a link deleted sooner, email support@rydnsoftware.com with the link.</p>
+  <p><b>Tips.</b> Tips go through Stripe, on Stripe's own page. Rydn sees the amount and the email address you give Stripe, never your card details. Stripe's privacy policy applies.</p>
+  <p><b>Websites and web versions.</b> The Rydn websites and web versions set no cookies and run no advertising, and none runs analytics except WxTable's visit count, described under WxTable. rydnsoftware.com is hosted by GitHub Pages, which, like any web host, sees the address of the device that visits and may keep it in its logs; the page that offers the downloads also asks GitHub for the list of releases, so GitHub sees that request too. A web version, such as DoStack's, stores what you enter and your settings in your browser's own storage on your device, not in a cookie, and keeps the record that you accepted the license there. It sends your lists to Rydn only if you turn on sync with a key, as the DoStack paragraph above says. Clearing the site's data in your browser removes all of it, including your acceptance. Tips (Stripe) and the optional announcement list (our email service provider) are separate services with their own policies and may set their own cookies on their own pages.</p>
+  <p><b>Announcement emails (website only).</b> On rydnsoftware.com you can ask to receive an occasional email about new Rydn apps and releases. If you do, we collect your email address, and we keep the date and time you signed up and the date and time you confirmed. We send you a confirmation email first, and we email you only if you confirm. We use your address only to send these announcements. Our email service provider stores the list and sends the emails for us, under its own privacy policy; it may handle the list in other countries. We do not sell the list or give it to anyone else. Our emails include tracking: our email service provider records, against your address, when you open an email and when you click a link in it, and the links in our emails pass through its address before they reach the page. We use this only to see whether announcements are read. Every email has an unsubscribe link that works in one click, and we stop emailing you when you use it. We keep a record that you unsubscribed so you are not added again by mistake. To ask us to delete your address, including that record, email support@rydnsoftware.com. The Rydn apps never send us your email address for this list, and signing up is not needed to use any app.</p>
+  <p><b>Children.</b> Rydn apps are not directed to children under 13, and we do not knowingly collect their information.</p>
+  <p><b>Changes and contact.</b> We will update this page and its version number when anything changes. Questions or requests: support@rydnsoftware.com.</p>
+  </div>
+  <h2>Credits</h2>
+  <div>© 2026 Rydn Software. Rydn™ and WxTable™ are trademarks of Rydn Software.</div>
+  <div class="sec">Facebook and Reddit are trademarks of their owners; their logos are used only to identify the share buttons.</div>
   <h2>Apps we like</h2>
   <div style="max-width:640px">Smoke: <a href="https://www.airnow.gov/" target="_blank" rel="noopener">AirNow</a> &bull; Wildfires with county alerts you set: <a href="https://www.watchduty.org/" target="_blank" rel="noopener">Watch Duty</a> &bull; Radar with flood alerts: <a href="https://myradar.com/" target="_blank" rel="noopener">MyRadar</a></div>
   <h2>Data</h2>
@@ -524,6 +597,7 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
 <script src="data/wx_normals_t_2026-10-29.js"></script>
 <script src="data/wx_runs_2026-10-29.js"></script>
 <script src="wxt_alerts_v04.js"></script>
+<script src="wxt_check_v01.js"></script>
 <script>
 // 0.56: live data (JG: "I want a LIVE prototype"; "Ready for live data"). Before the main script starts, ask Open-Meteo for the
 // forecast of every place (one request), the National Weather Service for each place's alerts, and Open-Meteo for the model
@@ -532,6 +606,8 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
 // no connection, and the days of the forecast before it, for the change arrows (moved to "before" once at least an hour old).
 (async function () {
   const KEY = 'wxtable_proto_v1', LIVE = 'wxtable_live_v1', LIMIT = 10000, HOUR = 3600e3;
+  // 0.65: did this browser have WxTable's choices before this page opened? Read before anything here can write them.
+  window.WX_FIRST = (() => { try { return localStorage.getItem(KEY) === null; } catch (e) { return true; } })();
   const msg = document.getElementById('livemsg');
   const say = (t, warn) => { msg.textContent = t; msg.hidden = !t; msg.classList.toggle('warn', !!warn); };
   const read = k => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } };
@@ -979,7 +1055,7 @@ function fit(scrollToToday) {   // columns keep one compact width, however many 
   // empty space after the last day, so the table can still open with today at the left edge when the days ahead are few
   const vw = tw.clientWidth || window.innerWidth;
   t.style.paddingRight = Math.max(0, vw - sz.nameW - ahead() * per * cw) + 'px';
-  const band = t.querySelector('.fband'), avail = window.innerHeight - $('strip').offsetHeight - $('livemsg').offsetHeight - $('ftrow').offsetHeight - 7 - Math.round(18 * TK) - (band ? band.offsetHeight : 0) - (tw.offsetHeight - tw.clientHeight), n = Math.max(1, chosen().length);
+  const band = t.querySelector('.fband'), avail = window.innerHeight - $('strip').offsetHeight - $('livemsg').offsetHeight - $('fromlink').offsetHeight - $('ftrow').offsetHeight - 7 - Math.round(18 * TK) - (band ? band.offsetHeight : 0) - (tw.offsetHeight - tw.clientHeight), n = Math.max(1, chosen().length);
   t.style.setProperty('--rh', Math.min(Math.round(sz.minRh * 1.5), Math.max(sz.minRh, Math.floor(avail / n))) + 'px');
   $('pTable').classList.toggle('ftshort', Math.floor(avail / n) < sz.minRh);   // rows at their smallest still too tall for the screen
   if (scrollToToday) tw.scrollLeft = (nd - ahead()) * per * cw;
@@ -1242,7 +1318,7 @@ $('aadd').addEventListener('click', async () => {
 
 // saved sets of locations: a name and a description; the date and time are recorded automatically
 function drawSetsList() {
-  $('slist').innerHTML = S.sets.map((s, i) => s.del ? `<div class="row2" style="margin:3px 0"><span class="sec">Deleted set <b>${esc(s.name)}</b></span><button class="btn" data-sundo="${i}">Undo</button></div>` : `<div class="row2" style="margin:3px 0"><button class="btn" data-sload="${i}">Load</button><b>${esc(s.name)}</b>${s.desc ? `<span>${esc(s.desc)}</span>` : ''}<span class="sec">${s.places.length} places · saved ${when(s.at)}</span><button class="del" data-sdel="${i}">Delete</button></div>`).join('');
+  $('slist').innerHTML = S.sets.map((s, i) => s.del ? `<div class="row2" style="margin:3px 0"><span class="sec">Deleted set <b>${esc(s.name)}</b></span><button class="btn" data-sundo="${i}">Undo</button></div>` : `<div class="row2" style="margin:3px 0"><button class="btn" data-sload="${i}">Load</button><b>${esc(s.name)}</b>${s.desc ? `<span>${esc(s.desc)}</span>` : ''}<span class="sec">${s.places.length} places · ${s.sent ? 'sent to you' : 'saved'} ${when(s.at)}</span><button class="btn" data-ssend="${i}">Send link</button><button class="del" data-sdel="${i}">Delete</button></div>`).join('');
 }
 $('ssave').addEventListener('click', () => {
   const name = $('sname').value.trim(); if (!name) { $('sname').focus(); return; }
@@ -1251,11 +1327,158 @@ $('ssave').addEventListener('click', () => {
   save(); $('sname').value = ''; $('sdesc').value = ''; drawSetsList();
 });
 $('slist').addEventListener('click', e => {
-  const l = e.target.closest('[data-sload]'), d = e.target.closest('[data-sdel]'), u = e.target.closest('[data-sundo]');
+  const l = e.target.closest('[data-sload]'), d = e.target.closest('[data-sdel]'), u = e.target.closest('[data-sundo]'), sd = e.target.closest('[data-ssend]');
+  if (sd) { const st = S.sets[+sd.dataset.ssend]; sendLink('set', { name: st.name, desc: st.desc || '', places: st.places.filter(x => !x.del).map(linkPlace) }, sd, $('smsg'), st.name); return; }
   if (u) { delete S.sets[+u.dataset.sundo].del; save(); drawSetsList(); }
-  if (l) { S.places = JSON.parse(JSON.stringify(S.sets[+l.dataset.sload].places)); save(); joinAdded(); drawLocs(); drawTable(); drawClim(); }
+  if (l) { loadSet(+l.dataset.sload, l); return; }
   if (d) { S.sets[+d.dataset.sdel].del = true; save(); drawSetsList(); }
 });
+// ---------- 0.65: sending places as a short link (R70; docs/DESIGN_WxTable_ShareAbout_v03.md) ----------
+// The link is the page's address with #s= and an 8-character code. The places (or a profile) sit behind the code at WxTable's
+// link service, wxtable-links, a Cloudflare Worker; the part after # never reaches the host or the visit counter. The mockup
+// server talks to a local test copy of the service (wrangler dev), never the live one.
+const LINKS = location.hostname === '127.0.0.1' ? 'http://127.0.0.1:8787' : 'https://wxtable-links.rydnsoftware.workers.dev';
+const LINK_RE = /^#s=([A-Za-z0-9]{8})$/;
+let firstVisit = !!window.WX_FIRST;   // no WxTable choices in this browser when the page opened (design §4b)
+async function linkFetch(url, opts) {   // 10 seconds at most
+  const ac = new AbortController(), t = setTimeout(() => ac.abort(), 10e3);
+  try { return await fetch(url, Object.assign({ signal: ac.signal }, opts)); } finally { clearTimeout(t); }
+}
+function linkPlace(x) {   // a place as a link carries it: name, position, note, checked or not
+  const b = x.wx || x.lat != null ? x : W.places.find(q => q.name === x.name) || x;
+  return { name: x.name, lat: Number(b.lat), lon: Number(b.lon), note: x.note || b.note || '', on: !!x.on };
+}
+function linkError(r, j) {
+  if (r && r.status === 429) return j && j.error === 'all' ? 'too many links were made today. Try again tomorrow.' : `${(j && j.limit) || 20} links have been sent from here today. Try again tomorrow.`;
+  if (r && (r.status === 400 || r.status === 413)) return 'the link service could not read it.';
+  return 'no answer from the link service. Check the connection and try again.';
+}
+async function sendLink(kind, data, btn, msg, label) {
+  if (btn.disabled) return;
+  const ok = WXCHECK.payload({ v: 1, kind, data });
+  if (!ok) { msg.innerHTML = '<span class="bad">Could not make the link: a place has no position, or a name is too long.</span>'; return; }
+  const body = JSON.stringify({ v: 1, kind, data: ok.data });
+  if (new TextEncoder().encode(body).length > 16384) { msg.innerHTML = '<span class="bad">Could not make the link: too much to send.</span>'; return; }
+  btn.disabled = true; busy(btn, 'Making link…', true); msg.textContent = '';
+  let r = null, j = null;
+  try { r = await linkFetch(LINKS + '/links', { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body }); j = await r.json().catch(() => null); } catch (e) { r = null; }
+  busy(btn, 'Send link', false); btn.disabled = false;
+  if (!r || !r.ok || !j || !LINK_RE.test('#s=' + j.code)) { msg.innerHTML = `<span class="bad">Could not make the link: ${esc(linkError(r, j))}</span>`; return; }
+  const url = location.origin + location.pathname + '#s=' + j.code, cut = ok.cut ? ` Only the first ${WXCHECK.MAX} places were sent.` : '';
+  if (navigator.share && document.documentElement.classList.contains('touch')) {
+    try { await navigator.share({ title: 'WxTable: ' + label, text: `${label} in WxTable`, url }); msg.textContent = cut.trim(); return; }
+    catch (e) { if (e.name === 'AbortError') { msg.textContent = cut.trim(); return; } }
+  }
+  try { await navigator.clipboard.writeText(url); msg.textContent = `Link copied: ${url.replace(/^https?:\/\//, '')}.${cut}`; }
+  catch (e) { msg.innerHTML = `Copy this link: <input type="text" readonly value="${esc(url)}" style="width:100%" onclick="this.select()">${esc(cut)}`; }
+}
+$('lsend').addEventListener('click', () => { $('lsbox').hidden = false; $('lsname').value = 'My places'; $('lsname').focus(); $('lsname').select(); });
+$('lscancel').addEventListener('click', () => { $('lsbox').hidden = true; });
+$('lsgo').addEventListener('click', () => {
+  const name = $('lsname').value.trim() || 'My places'; $('lsbox').hidden = true;
+  sendLink('set', { name, desc: '', places: S.places.filter(x => !x.del).map(linkPlace) }, $('lsend'), $('lsmsg'), name);
+});
+$('lsname').addEventListener('keydown', e => { if (e.key === 'Enter') $('lsgo').click(); });
+// Load: every place of a set or profile with its forecast; a place the page has no forecast for is fetched first, as when it is
+// added by hand. The list changes only when every place is ready (draft fault 3), one Load at a time (draft fault 2).
+let loading = false;
+async function loadPlaces(list, show) {
+  const out = [], bad = [], taken = n => out.some(y => y.name === n);
+  for (let k = 0; k < list.length; k++) {
+    const x = JSON.parse(JSON.stringify(list[k]));
+    if (x.wx || x.lat == null) { if (x.wx || W.places.some(q => q.name === x.name)) out.push(x); else bad.push(x.name); continue; }   // already ready, or the copy's own place by name
+    const near = W.places.find(q => q.name === x.name && Math.abs(q.lat - x.lat) + Math.abs(q.lon - x.lon) < 0.05);
+    if (near) { out.push({ name: x.name, on: x.on }); continue; }   // the copy's own place
+    if (W.places.some(q => q.name === x.name)) x.name += ' (sent)';   // the same name, another place (draft fault 4)
+    let n = x.name, c = 2; while (taken(n)) n = `${x.name} (${c++})`; x.name = n;
+    const have = S.places.find(y => y.wx && y.name === x.name && Math.abs(y.lat - x.lat) + Math.abs(y.lon - x.lon) < 0.05);
+    if (have) { out.push(Object.assign(JSON.parse(JSON.stringify(have)), { on: x.on })); continue; }   // already added here
+    show(`Loading ${k + 1} of ${list.length}`);
+    try {
+      x.wx = await fetchForecast(x.lat, x.lon);
+      try { x.alerts = await fetchAlerts(x.lat, x.lon); } catch (e) { if (e.status === 400) { x.alerts = []; x.noAlerts = true; } }
+      out.push(x);
+    } catch (e) { bad.push(`${x.name} (${e.message})`); }
+  }
+  return { out, bad };
+}
+async function loadSet(i, btn) {
+  if (loading) return; loading = true; btn.disabled = true; $('smsg').textContent = '';
+  let r; try { r = await loadPlaces(S.sets[i].places.filter(x => !x.del), t => busy(btn, t, true)); }
+  finally { busy(btn, 'Load', false); btn.disabled = false; loading = false; }   // review: never left stuck
+  const { out, bad } = r;
+  if (bad.length || !out.length) { $('smsg').textContent = `Not loaded, your places are unchanged: ${bad.join('; ') || 'no places'}.`; return; }
+  S.places = out; save(); joinAdded(); drawLocs(); drawTable(); drawClim();
+}
+function applyProfile(set, places) {
+  PROFILE_KEYS.forEach(k => { if (k !== 'places' && set[k] !== undefined) S[k] = JSON.parse(JSON.stringify(set[k])); });
+  if (places) S.places = places;
+  save(); joinAdded(); fillLayouts(); fillAhead(); fillRain(); drawLocs(); refresh();
+}
+async function loadProfile(i, btn) {
+  if (loading) return; loading = true; btn.disabled = true; $('pmsg2').textContent = '';
+  const set = JSON.parse(JSON.stringify(S.profiles[i].set));
+  let places = null, r = null;
+  try { if (Array.isArray(set.places)) r = await loadPlaces(set.places.filter(x => !x.del), t => busy(btn, t, true)); }
+  finally { busy(btn, 'Load', false); btn.disabled = false; loading = false; }   // review: never left stuck
+  if (r) {
+    if (r.bad.length || !r.out.length) { $('pmsg2').textContent = `Not loaded, your settings are unchanged: ${r.bad.join('; ') || 'no places'}.`; return; }
+    places = r.out;
+  }
+  delete set.places; applyProfile(set, places);
+}
+// Opening a link: someone new to WxTable in this browser sees it at once; anyone else is asked first (R70)
+let inbox = null;
+function drawInbox() {
+  const b = $('sinbox'); if (!inbox) { b.hidden = true; b.innerHTML = ''; return; }
+  const d = inbox.data, prof = inbox.kind === 'profile', pl = prof ? d.set.places : d.places;
+  b.hidden = false;
+  b.innerHTML = `<div><b>${prof ? 'A profile was sent to you' : 'A set of places was sent to you'}:</b> ${esc(d.name)}${!prof && d.desc ? ` · <span>${esc(d.desc)}</span>` : ''}</div>`
+    + `<div class="sec">${pl.length} place${pl.length > 1 ? 's' : ''}${prof ? ' and every setting' : ''}: ${pl.map(x => esc(x.name)).join(', ')}</div>`
+    + `<div class="row2" style="margin-top:4px"><button class="btn" id="sinadd">${prof ? 'Save to my profiles' : 'Save to my sets'}</button><button class="btn" id="sinno">No thanks</button></div>`
+    + '<div class="sec">Saving it changes nothing else: your places and settings stay as they are until you press Load beside it.</div>';
+}
+const uniq = (list, name) => { let n = name, k = 2; while (list.some(x => x.name === n)) n = `${name} (${k++})`; return n; };
+$('sinbox').addEventListener('click', e => {
+  if (e.target.id === 'sinadd' && inbox) {
+    const d = inbox.data;
+    if (inbox.kind === 'profile') {
+      const name = uniq(S.profiles, d.name); S.profiles.push({ name, at: Date.now(), sent: true, set: d.set }); save(); drawProfiles();
+      $('inmsg').textContent = `Saved "${name}" to your profiles (Options, Profiles). Press Load there to use it.`;
+    } else {
+      const name = uniq(S.sets, d.name); S.sets.push({ name, desc: d.desc, at: Date.now(), sent: true, places: d.places }); save(); drawSetsList();
+      $('inmsg').textContent = `Saved "${name}" to your saved sets below. Press Load beside it to show its places.`;
+    }
+    inbox = null; drawInbox();
+  } else if (e.target.id === 'sinno') { inbox = null; drawInbox(); $('inmsg').textContent = ''; }
+});
+$('fromclose').addEventListener('click', () => { $('fromlink').hidden = true; fit(false); });
+function linkSay(t, bad) { const l = $('livemsg'); l.textContent = t; l.hidden = !t; l.classList.toggle('warn', !!bad); }
+let opening = false;   // review: one link at a time, and not while a Load runs
+async function openLink() {
+  const m = LINK_RE.exec(location.hash); if (!m || opening) return;
+  if (loading) { linkSay('Opening the link when the Load is done…'); setTimeout(openLink, 1000); return; }
+  opening = loading = true;
+  try { await openLinkCode(m[1]); } finally { opening = loading = false; }
+}
+async function openLinkCode(code) {
+  linkSay('Opening the link sent to you…');
+  let got = null, answered = false;
+  try {
+    const r = await linkFetch(LINKS + '/links/' + code); answered = true;
+    if (r.ok) { const j = await r.json(); got = j && WXCHECK.payload({ v: 1, kind: j.kind, data: j.data }); }   // review: only these two fields
+  } catch (e) { got = null; }
+  if (!got && !answered) { linkSay('This link could not be opened: no answer from the link service. Reload the page to try again.', true); return; }   // the code stays in the address for the reload (review)
+  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* the code stays in the address */ }
+  if (!got) { linkSay('This link could not be opened: it may have expired (links last a year after last use).', true); return; }
+  if (!firstVisit) { linkSay(''); inbox = got; S.tab = 'locs'; drawInbox(); showTab(); return; }
+  const prof = got.kind === 'profile', { out, bad } = await loadPlaces(prof ? got.data.set.places : got.data.places, t => linkSay(t + '…'));
+  if (!out.length) { linkSay(`This link could not be opened: ${bad.join('; ')}.`, true); return; }
+  if (prof) { const set = JSON.parse(JSON.stringify(got.data.set)); delete set.places; applyProfile(set, out); $('fromname').textContent = got.data.name; $('fromlink').hidden = false; }
+  else { S.places = out; save(); joinAdded(); drawLocs(); refresh(); }
+  firstVisit = false; S.tab = 'table'; save(); showTab();
+  linkSay(bad.length ? `Not loaded: ${bad.join('; ')}.` : '', !!bad.length);
+}
 
 // search by town, and state or country, results as you type (Open-Meteo geocoding; any country since 0.62)
 const STATES = { AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California', CO: 'Colorado', CT: 'Connecticut', DE: 'Delaware', DC: 'District of Columbia',
@@ -1529,7 +1752,7 @@ function drawSets() {
 // Save Profile (R35): a name, with the date and time recorded automatically
 const PROFILE_KEYS = ['auto', 'layout', 'ahead', 'lines', 'which', 'rainshow', 'rainMin', 'amtMin', 'units', 'amt', 'cwin', 'changes', 'wu', 'places', 'e', 'ft'];
 function drawProfiles() {
-  $('plistp').innerHTML = S.profiles.map((p, i) => `<div class="row2" style="margin:3px 0"><button class="btn" data-load="${i}">Load</button><b>${esc(p.name)}</b><span class="sec">saved ${when(p.at)}</span></div>`).join('');
+  $('plistp').innerHTML = S.profiles.map((p, i) => `<div class="row2" style="margin:3px 0"><button class="btn" data-load="${i}">Load</button><b>${esc(p.name)}</b><span class="sec">${p.sent ? 'sent to you' : 'saved'} ${when(p.at)}</span><button class="btn" data-psend="${i}">Send link</button></div>`).join('');
 }
 $('psave').addEventListener('click', () => {
   const name = $('pname').value.trim(); if (!name) { $('pname').focus(); return; }
@@ -1538,8 +1761,12 @@ $('psave').addEventListener('click', () => {
   if (old >= 0) S.profiles[old] = rec; else S.profiles.push(rec);
   save(); $('pname').value = ''; drawProfiles();
 });
-$('plistp').addEventListener('click', e => { const b = e.target.closest('[data-load]'); if (!b) return;
-  Object.assign(S, JSON.parse(JSON.stringify(S.profiles[+b.dataset.load].set))); save(); joinAdded(); fillLayouts(); fillAhead(); fillRain(); drawLocs(); refresh(); });
+$('plistp').addEventListener('click', e => {   // 0.65: Load fetches a sent profile's places first; Send link
+  const b = e.target.closest('[data-load]'), sd = e.target.closest('[data-psend]');
+  if (sd) { const p = S.profiles[+sd.dataset.psend], set = JSON.parse(JSON.stringify(p.set)); set.places = (set.places || []).filter(x => !x.del).map(linkPlace);
+    sendLink('profile', { name: p.name, set }, sd, $('pmsg2'), p.name); return; }
+  if (b) loadProfile(+b.dataset.load, b);
+});
 // rating
 const rec = v => S.ratings[v] || (S.ratings[v] = { stars: 0, comment: '', ts: 0 });
 function showRating() {
@@ -1675,15 +1902,21 @@ if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues && w
 if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', drawDevice);
 
 function refresh() { drawUnits(); drawFt(); drawTable(); drawKey(); drawFcst(); drawClim(); drawSets(); drawProfiles(); showRating(); autoCheck(); alertCheck(); }
-const VERSION = '0.64.2', VERSION_DATE = '2026-11-01';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
+$('privBtn').addEventListener('click', () => {   // 0.65.1: the privacy policy opens below its button, on this page
+  const b = $('privBtn'), open = $('priv').hidden;
+  $('priv').hidden = !open; b.classList.toggle('on', open); b.setAttribute('aria-expanded', String(open));
+});
+const VERSION = '0.65.1', VERSION_DATE = '2026-11-01';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
 $('brand').textContent = `WxTable ${VERSION}`;
-$('aboutName').textContent = `WxTable v${VERSION} · ${VERSION_DATE}`;   // the Rydn format, as DoStack's About
+$('aboutName').textContent = `WxTable™ v${VERSION} · ${VERSION_DATE}`;   // ™ on About only (0.65)   // the Rydn format, as DoStack's About
 $('strip').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; save(); showTab(); });
 $('layout').addEventListener('change', () => { S.layout = $('layout').value; save(); fillAhead(); refresh(); showTab(); });
 $('ndays').addEventListener('change', () => { S.ahead = $('ndays').value; save(); refresh(); showTab(); });
 window.addEventListener('resize', () => { fitStrip(); fit(false); fitClim(); fitPlist(); });
 
 joinAdded(); fillLayouts(); fillAhead(); fillRain(); drawLocs(); refresh(); showTab();
+openLink();   // 0.65: a link sent to this person
+window.addEventListener('hashchange', () => { if (LINK_RE.test(location.hash)) openLink(); });   // a link opened in a tab already showing WxTable
 </script>
 <script data-goatcounter="https://rydnsoftware.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 </body></html>
