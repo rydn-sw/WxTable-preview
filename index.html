@@ -3,9 +3,19 @@
 <meta name="robots" content="noindex">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>WxTable 0.63</title>
+<title>WxTable 0.64.1</title>
 <style>
-/* WxTable 0.63 (2026-10-31): on upright phones the days chooser was cut to "10 d" (56 px for 82); when the top row
+/* WxTable 0.64.1 (2026-11-01): three fixes from the review before publishing 0.64: an alert that came or went no longer
+   redraws while someone types or has a chooser open (it waits, as the forecast reload does); each alert check gives up
+   after 10 seconds, so a check that never answers cannot stop alert checking; a forecast model with no run interval is
+   skipped instead of hanging the page.
+   0.64 (2026-10-31): Auto refresh (R68; JG: "Auto refresh"; "Good analysis, agree"), on Options, on for new
+   users, only while the page is on screen: alerts checked every 10 minutes; a new forecast at most every 3 hours; the
+   frequency is fixed, email support to change it (JG). Locations: the places in one column when that fits the screen's
+   height, else in columns as before (JG: "On a computer, there is plenty of space"). On a screen too short for the
+   table, the forecast line and
+   Refresh go to the top. About says visits are counted (GoatCounter, no cookies).
+   0.63 (2026-10-31): on upright phones the days chooser was cut to "10 d" (56 px for 82); when the top row
    is still too narrow after the arrows leave it, the days chooser goes to the forecast line too, before the arrows;
    the choosers may be up to 36% of the screen wide (was 24%), so "E Basic graphics" shows whole there.
    0.62 (2026-10-31): places outside the US (JG: "What about outside the US?"; "Yes, open it up"): search
@@ -287,6 +297,7 @@ a { color:var(--lo); }
 .st .d { color:var(--sec); font-size:12px; margin-left:6px; }
 /* places list, with a drag handle per row */
 .plist { margin-top:6px; columns:300px; column-gap:16px; }   /* as many columns as fit, reading down (0.52) */
+.plist.one { columns:auto; max-width:720px; }   /* one column when it fits the screen's height (0.64): no name squeezed */
 .plist .prow { break-inside:avoid; }
 .prow { display:flex; align-items:center; gap:8px; padding:2px 0; }
 .prow.dragging { opacity:.5; }
@@ -370,6 +381,7 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
 .ftrow { display:flex; align-items:center; gap:4px; }
 #pTable { display:flex; flex-direction:column; }
 #pTable.ftbottom .ftrow { order:2; }   /* the forecast time line under the table (0.50) */
+#pTable.ftbottom.ftshort .ftrow { order:0; }   /* the table taller than the screen: at the top, so Refresh stays in reach (0.64) */
 .ftrow .ft { flex:1 1 auto; min-width:0; }
 .ftrow .refresh { flex:0 0 auto; font-size:12px; padding:2px 10px; margin:2px 4px 2px 0; }   /* fetch again (0.57) */
 .nav { display:flex; align-items:center; gap:2px; }
@@ -482,7 +494,7 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
   <h2>Apps we like</h2>
   <div style="max-width:640px">Smoke: <a href="https://www.airnow.gov/" target="_blank" rel="noopener">AirNow</a> &bull; Wildfires with county alerts you set: <a href="https://www.watchduty.org/" target="_blank" rel="noopener">Watch Duty</a> &bull; Radar with flood alerts: <a href="https://myradar.com/" target="_blank" rel="noopener">MyRadar</a></div>
   <h2>Data</h2>
-  <div class="sec" style="font-size:13px;max-width:640px">Forecasts and past days: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Weather data by Open-Meteo.com</a> (free for non-commercial use, with credit). Weather Service alerts: National Weather Service, api.weather.gov (public domain); US only, so places elsewhere show none. The usual weather for each date, and the Climate tab: Open-Meteo Historical Weather API, 1991–2020. Forecast accuracy (Forecasting tab): WxTable's own research, research\WxForecastResearch_v04.md, 2026-10-24.</div>
+  <div class="sec" style="font-size:13px;max-width:640px">Forecasts and past days: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Weather data by Open-Meteo.com</a> (free for non-commercial use, with credit). Weather Service alerts: National Weather Service, api.weather.gov (public domain); US only, so places elsewhere show none. The usual weather for each date, and the Climate tab: Open-Meteo Historical Weather API, 1991–2020. Forecast accuracy (Forecasting tab): WxTable's own research, research\WxForecastResearch_v04.md, 2026-10-24. Visits: counted by <a href="https://www.goatcounter.com/" target="_blank" rel="noopener">GoatCounter</a>, without cookies and without anything that identifies you; your choices and places stay in this browser.</div>
   <h2>This device</h2>   <!-- at the end of About (JG, 2026-10-30) -->
   <div class="sec" style="font-size:13px;max-width:640px">What this browser reports about the device, and what the page can measure. WxTable adapts to the measured things (size, touch, settings), not to the device's name. It updates when you turn the device or change the window.</div>
   <div id="devPic" class="devpic"></div>
@@ -611,7 +623,7 @@ const TOUCH_MQ = matchMedia('(pointer: coarse)'), TOUCH_FORCE = /[?&]touch=1\b/.
 const setTouch = () => document.documentElement.classList.toggle('touch', TOUCH_FORCE == null ? TOUCH_MQ.matches : TOUCH_FORCE);
 const onTouchChange = () => { setTouch(); refresh(); fitStrip(); };   // addListener: Safari before 14 has no addEventListener here
 setTouch(); if (TOUCH_MQ.addEventListener) TOUCH_MQ.addEventListener('change', onTouchChange); else TOUCH_MQ.addListener(onTouchChange);
-let S = { ftPos: 'bottom', layout: 'EB', lines: 'g88', which: 'both',   // JG: "Default is rows and columns, light gray"
+let S = { auto: 'run', ftPos: 'bottom', layout: 'EB', lines: 'g88', which: 'both',   // JG: "Default is rows and columns, light gray"
  tab: 'table', rainshow: 'both', units: 'F', amt: 'in', changes: true, wu: false,
   ahead: '', rainMin: 20, amtMin: 0, e: null, ft: '2', cwin: null, places: null, profiles: [], sets: [], raterName: '', ratings: {} };
 try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s && typeof s === 'object') S = Object.assign(S, s, { ratings: Object.assign({}, s.ratings) }); } catch (e) { /* storage blocked: defaults */ }
@@ -869,7 +881,7 @@ const FT_PARTS = [{ m: 'HRRR', what: 'Next 2 days' }, { m: 'GFS', what: 'Later d
 const FT_STYLES = { 1: 'Clock times', 2: 'How old, how soon', 3: 'Time bars', 4: 'Over the days', 5: 'Rings' };
 const COPY = Date.parse(W.fetched);
 function runOf(m) {
-  const R = window.WXR && WXR.models[m]; if (!R) return null;
+  const R = window.WXR && WXR.models[m]; if (!R || !(R.every > 0) || !Number.isFinite(R.init) || !Number.isFinite(R.avail)) return null;   // 0.64.1: no interval would loop forever
   const delay = (R.avail - R.init) * 1000, every = R.every * 1000; let made = R.init * 1000;
   while (made + delay > COPY) made -= every;
   while (made + every + delay <= COPY) made += every;
@@ -940,6 +952,7 @@ function fit(scrollToToday) {   // columns keep one compact width, however many 
   t.style.paddingRight = Math.max(0, vw - sz.nameW - ahead() * per * cw) + 'px';
   const band = t.querySelector('.fband'), avail = window.innerHeight - $('strip').offsetHeight - $('livemsg').offsetHeight - $('ftrow').offsetHeight - 7 - Math.round(18 * TK) - (band ? band.offsetHeight : 0) - (tw.offsetHeight - tw.clientHeight), n = Math.max(1, chosen().length);
   t.style.setProperty('--rh', Math.min(Math.round(sz.minRh * 1.5), Math.max(sz.minRh, Math.floor(avail / n))) + 'px');
+  $('pTable').classList.toggle('ftshort', Math.floor(avail / n) < sz.minRh);   // rows at their smallest still too tall for the screen
   if (scrollToToday) tw.scrollLeft = (nd - ahead()) * per * cw;
   navState();
 }
@@ -957,6 +970,57 @@ function goDay(d) {
   clearTimeout(dayTimer); dayTimer = setTimeout(() => { dayTarget = null; }, 800);
   tw.scrollTo({ left: dayTarget * step, behavior: 'smooth' });
 }
+// Auto refresh (R68; JG, 2026-10-31: "Auto refresh"; "Good analysis, agree"), two parts, only while the page is on screen:
+// - Weather Service alerts every 10 minutes: they are issued at any hour, not with a model run; only the triangles redraw,
+//   and only when an alert came or went. Weather Service only, no Open-Meteo calls; places outside the US are skipped.
+// - a new forecast at most every 3 hours: the page opens again 5 minutes after the first model run expected 3 hours or more
+//   after it opened (the near-days model runs hourly, and hour to hour a daily high or low hardly moves). Never while someone
+//   types or has a chooser open.
+const AUTO_LATE = 5 * 60e3, FCST_EVERY = 3 * 3600e3, ALERT_EVERY = 10 * 60e3, LOADED = performance.timeOrigin || Date.now();
+const ALERT_KEEP = ['event', 'severity', 'urgency', 'certainty', 'onset', 'effective', 'ends', 'expires', 'headline', 'senderName', 'areaDesc'];
+let autoT = null, alertT = null, alertsAt = LOADED, alertBusy = false, alertDrawT = null;
+const busyTyping = () => { const a = document.activeElement; return !!a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName); };
+function autoCheck() {
+  clearTimeout(autoT); autoT = null;
+  const R = ftRuns(); if (S.auto !== 'run' || !R.length) return;
+  const from = LOADED + FCST_EVERY;   // the first expected run at or after 3 hours from opening
+  const next = Math.min(...R.map(r => r.due >= from ? r.due : r.due + Math.ceil((from - r.due) / r.every) * r.every));
+  const wait = next + AUTO_LATE - Date.now();
+  if (wait > 0) { autoT = setTimeout(autoCheck, Math.min(wait, 2e9)); return; }
+  if (document.hidden) return;   // a phone asleep or another tab: checked again when the page is seen
+  if (busyTyping()) { autoT = setTimeout(autoCheck, 60e3); return; }
+  location.reload();   // the loader fetches anew; the tab and choices are already saved
+}
+async function alertCheck() {
+  clearTimeout(alertT); alertT = null;
+  if (S.auto !== 'run' || alertBusy) return;
+  const wait = alertsAt + ALERT_EVERY - Date.now();
+  if (wait > 0) { alertT = setTimeout(alertCheck, wait); return; }
+  if (document.hidden) return;
+  alertBusy = true; alertsAt = Date.now();
+  let list, res;
+  try {   // 0.64.1: each check gives up after 10 seconds, and alertBusy is cleared whatever happens
+    list = W.places.map(p => ({ name: p.name, lat: p.lat, lon: p.lon }))
+      .concat(S.places.filter(x => x.wx && !x.del && !x.noAlerts && Number.isFinite(+x.lat) && Number.isFinite(+x.lon)).map(x => ({ name: x.name, lat: x.lat, lon: x.lon, x })));
+    res = await Promise.allSettled(list.map(p => { const ac = new AbortController(), t = setTimeout(() => ac.abort(), 10e3);
+      return getJson(`https://api.weather.gov/alerts/active?point=${(+p.lat).toFixed(4)},${(+p.lon).toFixed(4)}`, { headers: { Accept: 'application/geo+json' }, signal: ac.signal })
+        .then(j => (j.features || []).map(f => Object.fromEntries(ALERT_KEEP.map(k => [k, f.properties[k] ?? null]))))
+        .finally(() => clearTimeout(t)); }));
+  } finally { alertBusy = false; }
+  let changed = false, any = false;
+  list.forEach((p, i) => { if (res[i].status !== 'fulfilled') return; any = true; const v = res[i].value;   // a failed check keeps the last known alerts
+    const cur = window.WXA.places.find(q => q.name === p.name);
+    if (cur && JSON.stringify(cur.alerts) !== JSON.stringify(v)) { cur.alerts = v; changed = true; }
+    if (p.x) p.x.alerts = v; });
+  if (any) window.WXA.fetched = new Date(alertsAt).toISOString();
+  if (changed) { save(); alertRedraw(); } else { drawKey(); alertCheck(); }   // drawKey: the alerts' "as of" time in the source line
+}
+function alertRedraw() {   // 0.64.1: redraw for a changed alert, but never while someone types or has a chooser open
+  clearTimeout(alertDrawT); alertDrawT = null;
+  if (busyTyping()) { drawKey(); alertCheck(); alertDrawT = setTimeout(alertRedraw, 5e3); return; }
+  refresh();
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { autoCheck(); alertCheck(); } });
 $('refresh').addEventListener('click', () => { setTimeout(() => location.reload(), 150); });   // the loader fetches anew; the tab and choices are already saved
 $('dprev').addEventListener('click', () => goDay(-1));
 $('dnext').addEventListener('click', () => goDay(1));
@@ -1013,6 +1077,7 @@ function showTab() {
   Object.entries(TABS).forEach(([k, id]) => { $(id).hidden = S.tab !== k; });
   if (S.tab === 'table') fit(true);
   if (S.tab === 'about') drawDevice();
+  if (S.tab === 'locs') fitPlist();
   if (S.tab === 'clim') fitClim();
 }
 
@@ -1037,6 +1102,15 @@ function drawLocs() {
     return `<div class="prow" data-name="${esc(p.name)}"><span class="grip" aria-label="Drag to reorder">≡</span><label class="pl"><input type="checkbox" data-i="${i}"${x.on ? ' checked' : ''}><span>${esc(p.name)}</span><span class="d">${note ? note + ' · ' : ''}${(p.elevFt || 0).toLocaleString()} ft${x.wx ? ' · added, copy of ' + when(Date.parse(x.wx.fetched)) : ''}${x.noAlerts ? ' · no alerts outside the US' : ''}</span></label>${d}${wu}<button class="del" data-del="${i}">Delete</button></div>`;
   }).join('');
   drawSetsList();
+  fitPlist();
+}
+// the places in one column on a large screen (1000 px or wider) or when that fits the screen's height (JG: "On a computer,
+// there is plenty of space"); else in as many columns as fit, as since 0.52 (a phone held sideways)
+function fitPlist() {
+  const pl = $('plist'); if ($('pLocs').hidden) return;
+  pl.classList.add('one');
+  if (window.innerWidth >= 1000) return;   // a large screen: one column, scrolling is fine (JG: "scrolling is OK on a large screen")
+  if (pl.getBoundingClientRect().bottom + window.scrollY > window.innerHeight) pl.classList.remove('one');
 }
 $('plist').addEventListener('change', e => { const c = e.target.closest('[data-i]'); if (!c) return; S.places[+c.dataset.i].on = c.checked; save(); drawTable(); drawClim(); });
 // Delete leaves an Undo in the same place (JG: "After Delete add an Undo")
@@ -1370,7 +1444,8 @@ function drawSets() {
     ['Table type', sel('olayout', ORDER.map(v => ({ k: v, name: NAME(v) })), S.layout), ''],   // in step with the top row's chooser (0.47)
     ['Days ahead', sel('oahead', AHEAD, String(ahead())), `<span class="sec">${ahead()} days from today; past days to the left</span>`],
     ['Forecast time', sel('ftsel', Object.entries(FT_STYLES).map(([k, v]) => ({ k, name: `${k} ${v}` })), S.ft), '<span class="sec">Under or over the table: when the forecast was made, and when the next one is due. All five below; yellow outline = in use</span>'],
-    ['Forecast time at', sel('ftpos', [{ k: 'bottom', name: 'Bottom of the table' }, { k: 'top', name: 'Top of the table' }], S.ftPos), '<span class="sec">Where the forecast time line goes, with the day arrows when they are there (style 4 is inside the table)</span>'],
+    ['Forecast time at', sel('ftpos', [{ k: 'bottom', name: 'Bottom of the table' }, { k: 'top', name: 'Top of the table' }], S.ftPos), '<span class="sec">Where the forecast time line goes, with the day arrows when they are there (style 4 is inside the table). On a screen too short for the whole table it goes at the top, so Refresh stays in reach.</span>'],
+    ['Auto refresh', sel('auto', [{ k: 'run', name: 'Alerts 10 min, forecast 3 h' }, { k: 'off', name: 'Off' }], S.auto === 'off' ? 'off' : 'run'), '<span class="sec">While the page is on screen: Weather Service alerts checked every 10 minutes; a new forecast at most every 3 hours, a few minutes after a model run is expected (the times on the forecast line), not while you type or choose. Off: only when you press Refresh or open the page. The update frequency is fixed; if you need it changed, email <a href="mailto:support@rydnsoftware.com">support@rydnsoftware.com</a>.</span>'],
     ...Object.entries(FT_STYLES).map(([k, v]) => [`${k} ${v}`, '<span></span>', ftSample(k)]),
     ['Units', `<span>${unitsCtl()}</span>`, `<div class="sample">${sample('80px', sbox(shl(68, 45, '<span></span><span></span>')))}</div>`],
     ['Cell lines', sel('lines', LINES, S.lines), grid],
@@ -1398,6 +1473,7 @@ function drawSets() {
   $('oahead').onchange = () => { S.ahead = $('oahead').value; save(); fillAhead(); refresh(); };
   $('ftsel').onchange = () => { S.ft = $('ftsel').value; save(); refresh(); };
   $('ftpos').onchange = () => { S.ftPos = $('ftpos').value; save(); refresh(); };
+  $('auto').onchange = () => { S.auto = $('auto').value; save(); refresh(); };
   $('lines').onchange = () => { S.lines = $('lines').value; save(); refresh(); };
   $('which').onchange = () => { S.which = $('which').value; save(); refresh(); };
   $('rainshow').onchange = () => { S.rainshow = $('rainshow').value; save(); fillRain(); refresh(); };
@@ -1416,7 +1492,7 @@ function drawSets() {
   }
 }
 // Save Profile (R35): a name, with the date and time recorded automatically
-const PROFILE_KEYS = ['layout', 'ahead', 'lines', 'which', 'rainshow', 'rainMin', 'amtMin', 'units', 'amt', 'cwin', 'changes', 'wu', 'places', 'e', 'ft'];
+const PROFILE_KEYS = ['auto', 'layout', 'ahead', 'lines', 'which', 'rainshow', 'rainMin', 'amtMin', 'units', 'amt', 'cwin', 'changes', 'wu', 'places', 'e', 'ft'];
 function drawProfiles() {
   $('plistp').innerHTML = S.profiles.map((p, i) => `<div class="row2" style="margin:3px 0"><button class="btn" data-load="${i}">Load</button><b>${esc(p.name)}</b><span class="sec">saved ${when(p.at)}</span></div>`).join('');
 }
@@ -1563,14 +1639,14 @@ if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues && w
 ['resize', 'online', 'offline'].forEach(ev => window.addEventListener(ev, drawDevice));
 if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', drawDevice);
 
-function refresh() { drawUnits(); drawFt(); drawTable(); drawKey(); drawFcst(); drawClim(); drawSets(); drawProfiles(); showRating(); }
-const VERSION = '0.63', VERSION_DATE = '2026-10-31';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
+function refresh() { drawUnits(); drawFt(); drawTable(); drawKey(); drawFcst(); drawClim(); drawSets(); drawProfiles(); showRating(); autoCheck(); alertCheck(); }
+const VERSION = '0.64.1', VERSION_DATE = '2026-11-01';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
 $('brand').textContent = `WxTable ${VERSION}`;
 $('aboutName').textContent = `WxTable v${VERSION} · ${VERSION_DATE}`;   // the Rydn format, as DoStack's About
 $('strip').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; save(); showTab(); });
 $('layout').addEventListener('change', () => { S.layout = $('layout').value; save(); fillAhead(); refresh(); showTab(); });
 $('ndays').addEventListener('change', () => { S.ahead = $('ndays').value; save(); refresh(); showTab(); });
-window.addEventListener('resize', () => { fitStrip(); fit(false); fitClim(); });
+window.addEventListener('resize', () => { fitStrip(); fit(false); fitClim(); fitPlist(); });
 
 joinAdded(); fillLayouts(); fillAhead(); fillRain(); drawLocs(); refresh(); showTab();
 </script>

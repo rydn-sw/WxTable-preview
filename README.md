@@ -1,5 +1,5 @@
 # WxTable preview
 
-A test copy of the WxTable prototype for trying it on phones. Not a product; the weather data are fixed copies.
+The WxTable prototype for testers: weather across the places you choose, side by side. Not a product yet. The forecast and alerts are fetched live (Open-Meteo, National Weather Service); visits are counted by GoatCounter, without cookies.
 
-https://rydn-sw.github.io/WxTable-preview/
+https://wxtable.rydnsoftware.com
