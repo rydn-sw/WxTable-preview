@@ -11,10 +11,14 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>WxTable 0.66</title>
+<title>WxTable 0.66.1</title>
 <link rel="icon" type="image/png" sizes="32x32" href="WxTable_favicon_32_v01.png">
 <style>
-/* WxTable 0.66 (2026-11-01): a 7 Day Precip tab ("NEW 7 Day Precip" in the top row, NEW pulsing): what fell at each
+/* WxTable 0.66.1 (2026-11-01): on 7 Day Precip, a place where nothing was measured in the 7 days says "Dry: nothing
+   measured in 7 days (usual 0.67 in)" instead of "0% of usual" with an empty bar, which read like a fault (JG, of four
+   places showing all zeros: "I have multiple sessions, is this the problem"; of Claude's suggestion: "I agree with your
+   suggestion").
+   0.66 (2026-11-01): a 7 Day Precip tab ("NEW 7 Day Precip" in the top row, NEW pulsing): what fell at each
    place in the last 7 days up to now, measured (radar, rain and snow gauges, satellite) by the National Weather Service
    River Forecast Centers; a total, a column per day, today so far, and the usual amount for the 7 days (JG: "what actually
    fell?"; "I mean what makes the ground wet in physical reality: this matters"; "I think we should add a 7 Day Precip
@@ -1802,7 +1806,9 @@ function drawPrecip() {
     const n = v[QPE_NORM], pct = n > 0 ? Math.round(w7 / n * 100) : null;
     h += `<div class="tot"><b>${amtTxt(w7 + (now || 0), 2)}</b>${now == null ? `<div class="sec">to ${dayEnd ? clock(dayEnd) : '5 AM'}</div>` : ''}</div>`
       + days.map(dd => col(amtOf(v, dd.k) || 0)).join('') + (now == null ? '<div class="pd sec" title="Not measured here yet today">–</div>' : col(now, true))
-      + (pct == null ? '<div class="sec">Usual: none</div>' : `<div><b>${pct}%</b> of usual${track(pct)}<span class="sec">${amtTxt(w7, 2)} vs ${amtTxt(n, 2)}</span></div>`);
+      + (w7 + (now || 0) < 0.005   // nothing at all (shown as 0.00 in): said in words, so 0% and an empty bar do not read as a fault (0.66.1)
+        ? `<div><b>Dry:</b> nothing measured in 7 days${n > 0 ? ` <span class="sec">(usual ${amtTxt(n, 2)})</span>` : ''}</div>`
+        : pct == null ? '<div class="sec">Usual: none</div>' : `<div><b>${pct}%</b> of usual${track(pct)}<span class="sec">${amtTxt(w7, 2)} vs ${amtTxt(n, 2)}</span></div>`);
   });
   $('pt').innerHTML = h;
   const five = dayEnd ? clock(dayEnd) : '5 AM';
@@ -2037,7 +2043,7 @@ $('privBtn').addEventListener('click', () => {   // 0.65.1: the privacy policy o
   const b = $('privBtn'), open = $('priv').hidden;
   $('priv').hidden = !open; b.classList.toggle('on', open); b.setAttribute('aria-expanded', String(open));
 });
-const VERSION = '0.66', VERSION_DATE = '2026-11-01';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
+const VERSION = '0.66.1', VERSION_DATE = '2026-11-01';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
 $('brand').textContent = `WxTable ${VERSION}`;
 $('aboutName').textContent = `WxTable™ v${VERSION} · ${VERSION_DATE}`;   // ™ on About only (0.65)   // the Rydn format, as DoStack's About
 $('strip').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; save(); showTab(); });
