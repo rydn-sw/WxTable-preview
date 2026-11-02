@@ -11,10 +11,19 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>WxTable 0.66.1</title>
+<title>WxTable 0.67</title>
 <link rel="icon" type="image/png" sizes="32x32" href="WxTable_favicon_32_v01.png">
 <style>
-/* WxTable 0.66.1 (2026-11-01): on 7 Day Precip, a place where nothing was measured in the 7 days says "Dry: nothing
+/* WxTable 0.67 (2026-11-01): Options has "Times in": your device's time zone (the default) or each place's own; watch,
+   warning and advisory times now carry their time zone (alerts module wxt_alerts_v05.js) (JG: "Why does the warning /
+   watch text not show the time zone? Do a complete audit of time everywhere in the app"; "Default is device zone but there
+   needs to be an option"; "Yes, under Options"). The Explainer says the day and night hours are each place's own. The two
+   web addresses shown as text, water.noaa.gov and api.weather.gov, are links (JG: "every web address should be a link: do
+   an audit"). A saved set or profile keeps every place's position, so it still loads if the built-in places change (two
+   sets copied from the mockup server held places by name that the site does not have; JG: "Why have these stopped loading").
+   Send link, from Locations, a saved set or a profile, sends only the checked places, and says so when none are checked
+   (JG: "Major problem: only the CHECKED locations should be included in the link that is sent").
+   0.66.1 (2026-11-01): on 7 Day Precip, a place where nothing was measured in the 7 days says "Dry: nothing
    measured in 7 days (usual 0.67 in)" instead of "0% of usual" with an empty bar, which read like a fault (JG, of four
    places showing all zeros: "I have multiple sessions, is this the problem"; of Claude's suggestion: "I agree with your
    suggestion").
@@ -520,7 +529,7 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
   <div class="sec" id="inmsg"></div>
   <h2>Locations</h2>
   <div class="row2"><button class="btn" id="nearme">Near me</button><span class="sec" id="nearmsg"></span><label class="ck"><input type="checkbox" id="twu">Weather Underground links</label><span class="sec">WU ↗ beside each place: its 10-day forecast</span></div>
-  <div class="row2" style="margin:4px 0"><span class="sec">Checked places are in the table. Drag ≡ to change the order.</span><button class="btn" id="lsend">Send link</button></div>
+  <div class="row2" style="margin:4px 0"><span class="sec">Checked places are in the table, and only they are sent by Send link. Drag ≡ to change the order.</span><button class="btn" id="lsend">Send link</button></div>
   <div class="namebox" id="lsbox" hidden><div class="sec">Name for what you send</div><div class="row2" style="margin-top:4px"><input type="text" id="lsname" maxlength="60" aria-label="Name for what you send"><button class="btn" id="lsgo">Send</button><button class="btn" id="lscancel">Cancel</button></div></div>
   <div class="sec" id="lsmsg"></div>
   <div class="plist" id="plist"></div>
@@ -638,7 +647,7 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
   <h2>Apps we like</h2>
   <div style="max-width:640px">Smoke: <a href="https://www.airnow.gov/" target="_blank" rel="noopener">AirNow</a> &bull; Wildfires with county alerts you set: <a href="https://www.watchduty.org/" target="_blank" rel="noopener">Watch Duty</a> &bull; Radar with flood alerts: <a href="https://myradar.com/" target="_blank" rel="noopener">MyRadar</a></div>
   <h2>Data</h2>
-  <div class="sec" style="font-size:13px;max-width:640px">Forecasts and past days: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Weather data by Open-Meteo.com</a> (free for non-commercial use, with credit). Weather Service alerts: National Weather Service, api.weather.gov (public domain); US only, so places elsewhere show none. The usual weather for each date, and the Climate tab: Open-Meteo Historical Weather API, 1991–2020. Forecast accuracy (Forecasting tab): WxTable's own research, research\WxForecastResearch_v04.md, 2026-10-24. Visits: counted by <a href="https://www.goatcounter.com/" target="_blank" rel="noopener">GoatCounter</a>, without cookies and without anything that identifies you; your choices and places stay in this browser.</div>
+  <div class="sec" style="font-size:13px;max-width:640px">Forecasts and past days: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Weather data by Open-Meteo.com</a> (free for non-commercial use, with credit). Weather Service alerts: National Weather Service, <a href="https://www.weather.gov/documentation/services-web-api" target="_blank" rel="noopener">api.weather.gov</a> (public domain); US only, so places elsewhere show none. The usual weather for each date, and the Climate tab: Open-Meteo Historical Weather API, 1991–2020. Forecast accuracy (Forecasting tab): WxTable's own research, research\WxForecastResearch_v04.md, 2026-10-24. Visits: counted by <a href="https://www.goatcounter.com/" target="_blank" rel="noopener">GoatCounter</a>, without cookies and without anything that identifies you; your choices and places stay in this browser.</div>
   <h2>This device</h2>   <!-- at the end of About (JG, 2026-10-30) -->
   <div class="sec" style="font-size:13px;max-width:640px">What this browser reports about the device, and what the page can measure. WxTable adapts to the measured things (size, touch, settings), not to the device's name. It updates when you turn the device or change the window.</div>
   <div id="devPic" class="devpic"></div>
@@ -653,7 +662,7 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
 <script src="data/wx_climate_t12_2026-10-31.js"></script>   <!-- 7, 30, 90 days, 6 and 12 months, year to date -->
 <script src="data/wx_normals_t_2026-10-29.js"></script>
 <script src="data/wx_runs_2026-10-29.js"></script>
-<script src="wxt_alerts_v04.js"></script>
+<script src="wxt_alerts_v05.js"></script>
 <script src="wxt_check_v01.js"></script>
 <script>
 // 0.56: live data (JG: "I want a LIVE prototype"; "Ready for live data"). Before the main script starts, ask Open-Meteo for the
@@ -706,14 +715,14 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
   const now = Date.now(), fetched = isoNow(), notes = [];
 
   if (Array.isArray(F) && F.length === places.length && F.every(d => d && d.daily && d.hourly)) {
-    const D = F.map(d => ({ elevFt: Math.round((d.elevation || 0) * 3.28084), offset: offStr(d.utc_offset_seconds || 0),
+    const D = F.map(d => ({ elevFt: Math.round((d.elevation || 0) * 3.28084), offset: offStr(d.utc_offset_seconds || 0), tz: d.timezone || null,
       days: d.daily.time.map((t, i) => [t, rnd(d.daily.temperature_2m_max[i]), rnd(d.daily.temperature_2m_min[i]), d.daily.precipitation_probability_max[i] ?? 0,
         rnd(d.daily.precipitation_sum[i], 2), rnd(d.daily.wind_gusts_10m_max[i]), d.daily.weather_code ? d.daily.weather_code[i] : null]),
       hours: d.hourly.time.map((t, i) => [t, rnd(d.hourly.temperature_2m[i]), d.hourly.precipitation_probability[i], rnd(d.hourly.wind_gusts_10m[i]), rnd(d.hourly.precipitation[i], 2)]) }));
     const n = BUNDLED.places.length;
     window.WXT = { fetched, source: 'Open-Meteo', pastDays: 7, live: true,
-      places: places.slice(0, n).map((p, i) => ({ name: p.name, note: p.note, lat: p.lat, lon: p.lon, elevFt: D[i].elevFt, days: D[i].days, hours: D[i].hours })) };
-    added.forEach((x, j) => { const d = D[n + j]; x.wx = { fetched: new Date(now).toISOString(), offset: d.offset, elevFt: d.elevFt, days: d.days, hours: d.hours }; });
+      places: places.slice(0, n).map((p, i) => ({ name: p.name, note: p.note, lat: p.lat, lon: p.lon, tz: D[i].tz, elevFt: D[i].elevFt, days: D[i].days, hours: D[i].hours })) };
+    added.forEach((x, j) => { const d = D[n + j]; x.wx = { fetched: new Date(now).toISOString(), offset: d.offset, tz: d.tz, elevFt: d.elevFt, days: d.days, hours: d.hours }; });
     // the change arrows compare with the forecast before this one, once that one is at least an hour old
     const slim = { fetched, places: places.map((p, i) => ({ name: p.name, days: D[i].days })) };
     if (L.cur && now - Date.parse(L.cur.fetched) >= HOUR) L.prev = L.cur;
@@ -761,6 +770,18 @@ function tzOf(ms) {   // the time zone's short name, e.g. MST, for every clock t
   try { return ' ' + new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' }).formatToParts(new Date(ms)).find(p => p.type === 'timeZoneName').value; } catch (e) { return ''; }
 }
 function when(ms) { const d = new Date(ms), h = d.getHours(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${h % 12 || 12}:${pad(d.getMinutes())} ${h < 12 ? 'AM' : 'PM'}${tzOf(ms)}`; }
+function whenAt(ms, zone) {   // the same form as when(), in another time zone (an IANA name such as America/Denver), or null (0.67)
+  try { const f = {}; new Intl.DateTimeFormat('en-US', { timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit', hour: 'numeric', minute: '2-digit', hour12: true, timeZoneName: 'short' })
+    .formatToParts(new Date(ms)).forEach(p => { f[p.type] = p.value; });
+    return `${f.year}-${f.month}-${f.day} ${f.hour}:${f.minute} ${String(f.dayPeriod || '').toUpperCase()} ${f.timeZoneName || ''}`.trim(); } catch (e) { return null; }
+}
+function placeZone(name) {   // a place's own time zone, from its forecast; null for a copy made before 0.67
+  const p = (window.WXT.places || []).find(q => q.name === name); if (p && p.tz) return p.tz;
+  const x = (S.places || []).find(y => y.name === name && y.wx); return x && x.wx.tz || null;
+}
+// watch, warning and advisory times (wxt_alerts_v05.js asks here): in the device's time zone, or the place's own (Options, Times in)
+window.WXTIME = { alert(iso, name) { try { const ms = Date.parse(iso); if (!Number.isFinite(ms)) return null;   // null: the alerts module shows its own time
+  if (S.tz !== 'place') return when(ms); const z = placeZone(name); return z ? whenAt(ms, z) : null; } catch (e) { return null; } } };
 const TODAY = W.fetched.slice(0, 10), ALL = W.places[0].days.map(d => d[0]), TI = ALL.indexOf(TODAY);
 W.places.forEach(p => { p.byDay = Object.fromEntries(p.days.map(r => [r[0], r])); });
 const NODAY = [null, null, null, 0, null, 0];   // a day an added place's copy does not cover: an empty box
@@ -776,7 +797,7 @@ const onTouchChange = () => { setTouch(); refresh(); fitStrip(); };   // addList
 setTouch(); if (TOUCH_MQ.addEventListener) TOUCH_MQ.addEventListener('change', onTouchChange); else TOUCH_MQ.addListener(onTouchChange);
 let S = { auto: 'run', ftPos: 'bottom', layout: 'EB', lines: 'g88', which: 'both',   // JG: "Default is rows and columns, light gray"
  tab: 'table', rainshow: 'both', units: 'F', amt: 'in', changes: true, wu: false,
-  ahead: '', rainMin: 20, amtMin: 0, e: null, ft: '2', cwin: null, places: null, profiles: [], sets: [], raterName: '', ratings: {} };
+  ahead: '', rainMin: 20, amtMin: 0, e: null, ft: '2', tz: 'device', cwin: null, places: null, profiles: [], sets: [], raterName: '', ratings: {} };
 try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s && typeof s === 'object') S = Object.assign(S, s, { ratings: Object.assign({}, s.ratings) }); } catch (e) { /* storage blocked: defaults */ }
 if (!S.rain020) { if (S.rainshow === 'chance') S.rainshow = 'both'; S.rain020 = true; }   // once: the old default to the new
 delete S.myLoc;   // 0.13's "My location" is gone (JG: "it's NOT my location - it's any location")
@@ -1339,7 +1360,7 @@ async function getJson(url, opts) { const r = await fetch(url, opts); if (r.stat
 async function fetchForecast(lat, lon) {   // the same request as fetch_snapshot_c.py, for one place
   const d = await getJson(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_gusts_10m_max,weather_code&hourly=temperature_2m,precipitation_probability,wind_gusts_10m,precipitation&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&past_days=${W.pastDays || 7}&forecast_days=16`);
   const D = d.daily, H = d.hourly;
-  return { fetched: new Date().toISOString(), offset: offStr(d.utc_offset_seconds || 0), elevFt: Math.round((d.elevation || 0) * 3.28084),
+  return { fetched: new Date().toISOString(), offset: offStr(d.utc_offset_seconds || 0), tz: d.timezone || null, elevFt: Math.round((d.elevation || 0) * 3.28084),
     days: D.time.map((t, i) => [t, rnd(D.temperature_2m_max[i]), rnd(D.temperature_2m_min[i]), D.precipitation_probability_max[i] ?? 0, rnd(D.precipitation_sum[i], 2), rnd(D.wind_gusts_10m_max[i]), D.weather_code ? D.weather_code[i] : null]),
     hours: H.time.map((t, i) => [t, rnd(H.temperature_2m[i]), H.precipitation_probability[i], rnd(H.wind_gusts_10m[i]), rnd(H.precipitation[i], 2)]) };
 }
@@ -1390,13 +1411,13 @@ function drawSetsList() {
 }
 $('ssave').addEventListener('click', () => {
   const name = $('sname').value.trim(); if (!name) { $('sname').focus(); return; }
-  const rec = { name, desc: $('sdesc').value.trim(), at: Date.now(), places: JSON.parse(JSON.stringify(S.places.filter(x => !x.del))) };
+  const rec = { name, desc: $('sdesc').value.trim(), at: Date.now(), places: S.places.filter(x => !x.del).map(withPos) };
   const old = S.sets.findIndex(s => s.name === name); if (old >= 0) S.sets[old] = rec; else S.sets.push(rec);
   save(); $('sname').value = ''; $('sdesc').value = ''; drawSetsList();
 });
 $('slist').addEventListener('click', e => {
   const l = e.target.closest('[data-sload]'), d = e.target.closest('[data-sdel]'), u = e.target.closest('[data-sundo]'), sd = e.target.closest('[data-ssend]');
-  if (sd) { const st = S.sets[+sd.dataset.ssend]; sendLink('set', { name: st.name, desc: st.desc || '', places: st.places.filter(x => !x.del).map(linkPlace) }, sd, $('smsg'), st.name); return; }
+  if (sd) { const st = S.sets[+sd.dataset.ssend]; sendLink('set', { name: st.name, desc: st.desc || '', places: sendable(st.places) }, sd, $('smsg'), st.name); return; }
   if (u) { delete S.sets[+u.dataset.sundo].del; save(); drawSetsList(); }
   if (l) { loadSet(+l.dataset.sload, l); return; }
   if (d) { S.sets[+d.dataset.sdel].del = true; save(); drawSetsList(); }
@@ -1421,8 +1442,11 @@ function linkError(r, j) {
   if (r && (r.status === 400 || r.status === 413)) return 'the link service could not read it.';
   return 'no answer from the link service. Check the connection and try again.';
 }
+const sendable = list => (list || []).filter(x => !x.del && x.on).map(linkPlace);   // only the checked places go in a link (0.67; JG: "only the CHECKED locations should be included in the link that is sent")
 async function sendLink(kind, data, btn, msg, label) {
   if (btn.disabled) return;
+  const pl = kind === 'set' ? data.places : data.set && data.set.places;
+  if (Array.isArray(pl) && !pl.length) { msg.innerHTML = `<span class="bad">No checked places to send: ${kind === 'set' && btn.id === 'lsend' ? 'check the places to send, then press Send link' : 'a saved set or profile keeps the checks it was saved with; load it, check the places to send, and save it again'}.</span>`; return; }
   const ok = WXCHECK.payload({ v: 1, kind, data });
   if (!ok) { msg.innerHTML = '<span class="bad">Could not make the link: a place has no position, or a name is too long.</span>'; return; }
   const body = JSON.stringify({ v: 1, kind, data: ok.data });
@@ -1444,7 +1468,7 @@ $('lsend').addEventListener('click', () => { $('lsbox').hidden = false; $('lsnam
 $('lscancel').addEventListener('click', () => { $('lsbox').hidden = true; });
 $('lsgo').addEventListener('click', () => {
   const name = $('lsname').value.trim() || 'My places'; $('lsbox').hidden = true;
-  sendLink('set', { name, desc: '', places: S.places.filter(x => !x.del).map(linkPlace) }, $('lsend'), $('lsmsg'), name);
+  sendLink('set', { name, desc: '', places: sendable(S.places) }, $('lsend'), $('lsmsg'), name);
 });
 $('lsname').addEventListener('keydown', e => { if (e.key === 'Enter') $('lsgo').click(); });
 // Load: every place of a set or profile with its forecast; a place the page has no forecast for is fetched first, as when it is
@@ -1454,7 +1478,7 @@ async function loadPlaces(list, show) {
   const out = [], bad = [], taken = n => out.some(y => y.name === n);
   for (let k = 0; k < list.length; k++) {
     const x = JSON.parse(JSON.stringify(list[k]));
-    if (x.wx || x.lat == null) { if (x.wx || W.places.some(q => q.name === x.name)) out.push(x); else bad.push(x.name); continue; }   // already ready, or the copy's own place by name
+    if (x.wx || x.lat == null) { if (x.wx || W.places.some(q => q.name === x.name)) out.push(x); else bad.push(`${x.name} (saved by name only, and not one of this page's built-in places)`); continue; }   // already ready, or the copy's own place by name
     const near = W.places.find(q => q.name === x.name && Math.abs(q.lat - x.lat) + Math.abs(q.lon - x.lon) < 0.05);
     if (near) { out.push({ name: x.name, on: x.on }); continue; }   // the copy's own place
     if (W.places.some(q => q.name === x.name)) x.name += ' (sent)';   // the same name, another place (draft fault 4)
@@ -1647,7 +1671,7 @@ function drawKey() {
     head('Precipitation');
     k(eSample({ precip: true }), 'Precipitation', 'the blue column: its height is the amount (1 in fills it), how solid it is, the chance. On past days it is solid: what fell. On a snow day it is filled with *.', eck('precip'));
     k(eSample({ precip: true, amt: true }), 'The amount', `left of the column at its base, in ${MM() ? 'millimeters' : 'inches'}; not shown where the low temperature is.`, eck('amt'));
-    k(eSample({ precip: true, hours: true }), 'When in the day', 'ticks along the bottom for the hours with precip (here, noon to 5 PM).', eck('hours'));
+    k(eSample({ precip: true, hours: true }), 'When in the day', 'ticks along the bottom for the hours with precip (here, noon to 5 PM at the place, its own time).', eck('hours'));
     head('Also shown');
     k(eSample({ gust: true }), 'Wind gusts', `the line at the right: longer for stronger, yellow at ${GUST_LIMIT} mph or more; none below ${GUST_MIN} mph.`, eck('gust'));
     k(eSample({ gust: true, gnum: true }), 'The gust speed', 'in mph, in the middle of the line, when the line is long enough.', eck('gnum'));
@@ -1658,7 +1682,7 @@ function drawKey() {
   } else {
     head('Temperature');
     if (lay === '0.07') k(sample('40px 40px', sbox('<span class="hi">' + T(68) + '</span><div class="l2"></div>', '', 'd') + sbox('<span class="lo">' + T(45) + '</span><div class="l2"></div>', 'background:#161a22', 'n'), 'l07'),
-      'Temperature, day and night', `the day's high (6 AM–6 PM) in yellow; the night's low (6 PM–6 AM, darker box) in blue (${U()}).`);
+      'Temperature, day and night', `the day's high (6 AM–6 PM, each place's own time) in yellow; the night's low (6 PM–6 AM, darker box) in blue (${U()}).`);
     else if (lay === '0.08') k(sample('80px', `<div class="c one"><span class="hi">${T(68)}</span></div>`), 'Temperature', `the day's high, in yellow (${U()}). Hold a finger or the mouse on a box for the low.`);
     else k(sample('80px', sbox(shl(68, 45, '<span></span><span></span>'))), 'Temperature', `the day's high in yellow, its low in blue (${U()}).`);
     k(sample('80px', sbox(`<span class="hi">${T(66)}<span class="chg">${FAT.up}</span></span><span class="lo">${T(47)}</span><div class="l2"><span class="r">62%<span class="chg">${FAT.dn}</span></span><span></span></div>`)),
@@ -1815,8 +1839,8 @@ function drawPrecip() {
   $('pkeys').innerHTML = `<div class="ckey">Each day runs from ${five} to ${five} the next morning (12:00 UTC, the Weather Service's day); the day shown is the one it starts on. <span class="pd now" style="display:inline-flex"><span class="col" style="height:12px"></span></span> Today so far: since ${five}.</div>`
     + `<div class="ckey">Usual: ${track(100)} the white mark is the usual amount for those 7 days (1991–2020, PRISM), against the 7 days to ${five} today.</div>`
     + `<div class="ckey">Units: ${unitsCtl()}</div>`;
-  $('pnote').textContent = `Measured: radar, rain and snow gauges and satellite, combined by the National Weather Service River Forecast Centers on a grid of about 2.5 miles (4 km); melted snow counts as water. `
-    + (dayEnd ? `Days to ${when(dayEnd)}; today to about ${nowEnd ? when(nowEnd) : '?'}. ` : '') + (dayEnd ? `The day totals may be revised until about ${clock(dayEnd + 9 * 36e5)} (21:00 UTC). ` : '') + 'Source: NWS map service obs/rfc_qpe (water.noaa.gov).';
+  $('pnote').innerHTML = `Measured: radar, rain and snow gauges and satellite, combined by the National Weather Service River Forecast Centers on a grid of about 2.5 miles (4 km); melted snow counts as water. `
+    + (dayEnd ? `Days to ${when(dayEnd)}; today to about ${nowEnd ? when(nowEnd) : '?'}. ` : '') + (dayEnd ? `The day totals may be revised until about ${clock(dayEnd + 9 * 36e5)} (21:00 UTC). ` : '') + 'Source: NWS map service obs/rfc_qpe (<a href="https://water.noaa.gov/" target="_blank" rel="noopener">water.noaa.gov</a>).';   // 0.67: a link
   fitPrecip();
 }
 function fitPrecip() { const t = $('pt'); if ($('pPrecip').hidden) return; t.style.maxHeight = Math.max(160, window.innerHeight - (t.getBoundingClientRect().top + window.scrollY) - 8) + 'px'; }
@@ -1839,6 +1863,7 @@ function drawSets() {
     ['Forecast time at', sel('ftpos', [{ k: 'bottom', name: 'Bottom of the table' }, { k: 'top', name: 'Top of the table' }], S.ftPos), '<span class="sec">Where the forecast time line goes, with the day arrows when they are there (style 4 is inside the table). On a screen too short for the whole table it goes at the top, so Refresh stays in reach.</span>'],
     ['Auto refresh', sel('auto', [{ k: 'run', name: 'Alerts 10 min, forecast 3 h' }, { k: 'off', name: 'Off' }], S.auto === 'off' ? 'off' : 'run'), '<span class="sec">While the page is on screen: Weather Service alerts checked every 10 minutes; a new forecast at most every 3 hours, a few minutes after a model run is expected (the times on the forecast line), not while you type or choose. Off: only when you press Manual Refresh or open the page. The update frequency is fixed; if you need it changed, email <a href="mailto:support@rydnsoftware.com">support@rydnsoftware.com</a>.</span>'],
     ...Object.entries(FT_STYLES).map(([k, v]) => [`${k} ${v}`, '<span></span>', ftSample(k)]),
+    ['Times in', sel('tzsel', [{ k: 'device', name: 'Your device\'s time zone' }, { k: 'place', name: 'Each place\'s own time zone' }], S.tz === 'place' ? 'place' : 'device'), '<span class="sec">Each place\'s own: watch, warning and advisory times in that place\'s time zone. Times that belong to no one place (when the forecast was made, 7 Day Precip\'s days) stay in your device\'s zone. The day and night halves in the table are always each place\'s own 6 AM to 6 PM.</span>'],
     ['Units', `<span>${unitsCtl()}</span>`, `<div class="sample">${sample('80px', sbox(shl(68, 45, '<span></span><span></span>')))}</div>`],
     ['Cell lines', sel('lines', LINES, S.lines), grid],
     ['Which lines', sel('which', WHICH, S.which), grid],
@@ -1868,6 +1893,7 @@ function drawSets() {
   $('ftsel').onchange = () => { S.ft = $('ftsel').value; save(); refresh(); };
   $('ftpos').onchange = () => { S.ftPos = $('ftpos').value; save(); refresh(); };
   $('auto').onchange = () => { S.auto = $('auto').value; save(); refresh(); };
+  $('tzsel').onchange = () => { S.tz = $('tzsel').value; save(); refresh(); };   // 0.67
   $('lines').onchange = () => { S.lines = $('lines').value; save(); refresh(); };
   $('which').onchange = () => { S.which = $('which').value; save(); refresh(); };
   $('rainshow').onchange = () => { S.rainshow = $('rainshow').value; save(); fillRain(); refresh(); };
@@ -1887,20 +1913,26 @@ function drawSets() {
   }
 }
 // Save Profile (R35): a name, with the date and time recorded automatically
-const PROFILE_KEYS = ['auto', 'layout', 'ahead', 'lines', 'which', 'rainshow', 'rainMin', 'amtMin', 'units', 'amt', 'cwin', 'changes', 'wu', 'places', 'e', 'ft'];
+function withPos(x) {   // a copy of a place that keeps its position even when it is a built-in one (0.67): the set still loads if the built-in places change
+  const c = JSON.parse(JSON.stringify(x));
+  if (!c.wx && c.lat == null) { const b = W.places.find(q => q.name === c.name); if (b) { c.lat = b.lat; c.lon = b.lon; if (b.note && !c.note) c.note = b.note; } }
+  return c;
+}
+const PROFILE_KEYS = ['auto', 'layout', 'ahead', 'lines', 'which', 'rainshow', 'rainMin', 'amtMin', 'units', 'amt', 'cwin', 'changes', 'wu', 'places', 'e', 'ft', 'tz'];   // tz: 0.67 (a link drops it: wxt_check_v01.js does not know it)
 function drawProfiles() {
   $('plistp').innerHTML = S.profiles.map((p, i) => `<div class="row2" style="margin:3px 0"><button class="btn" data-load="${i}">Load</button><b>${esc(p.name)}</b><span class="sec">${p.sent ? 'sent to you' : 'saved'} ${when(p.at)}</span><button class="btn" data-psend="${i}">Send link</button></div>`).join('');
 }
 $('psave').addEventListener('click', () => {
   const name = $('pname').value.trim(); if (!name) { $('pname').focus(); return; }
   const set = {}; PROFILE_KEYS.forEach(k => { if (S[k] !== undefined) set[k] = JSON.parse(JSON.stringify(S[k])); });
+  if (Array.isArray(set.places)) set.places = set.places.filter(x => !x.del).map(withPos);   // 0.67
   const old = S.profiles.findIndex(p => p.name === name), rec = { name, at: Date.now(), set };
   if (old >= 0) S.profiles[old] = rec; else S.profiles.push(rec);
   save(); $('pname').value = ''; drawProfiles();
 });
 $('plistp').addEventListener('click', e => {   // 0.65: Load fetches a sent profile's places first; Send link
   const b = e.target.closest('[data-load]'), sd = e.target.closest('[data-psend]');
-  if (sd) { const p = S.profiles[+sd.dataset.psend], set = JSON.parse(JSON.stringify(p.set)); set.places = (set.places || []).filter(x => !x.del).map(linkPlace);
+  if (sd) { const p = S.profiles[+sd.dataset.psend], set = JSON.parse(JSON.stringify(p.set)); set.places = sendable(set.places);
     sendLink('profile', { name: p.name, set }, sd, $('pmsg2'), p.name); return; }
   if (b) loadProfile(+b.dataset.load, b);
 });
@@ -2043,7 +2075,7 @@ $('privBtn').addEventListener('click', () => {   // 0.65.1: the privacy policy o
   const b = $('privBtn'), open = $('priv').hidden;
   $('priv').hidden = !open; b.classList.toggle('on', open); b.setAttribute('aria-expanded', String(open));
 });
-const VERSION = '0.66.1', VERSION_DATE = '2026-11-01';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
+const VERSION = '0.67', VERSION_DATE = '2026-11-01';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
 $('brand').textContent = `WxTable ${VERSION}`;
 $('aboutName').textContent = `WxTable™ v${VERSION} · ${VERSION_DATE}`;   // ™ on About only (0.65)   // the Rydn format, as DoStack's About
 $('strip').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; save(); showTab(); });
