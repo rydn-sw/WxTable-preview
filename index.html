@@ -11,10 +11,17 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>WxTable 0.67.5</title>
+<title>WxTable 0.67.7</title>
 <link rel="icon" type="image/png" sizes="32x32" href="WxTable_favicon_32_v01.png">
 <style>
-/* WxTable 0.67.5 (2026-11-01): the forecast time line goes where Options says, always; it no longer moves to the top
+/* WxTable 0.67.7 (2026-11-02): review of 0.67.6: past days are the table's (the device's date), so a place in another
+   time zone is not split near midnight; no precip-change arrow until the previous forecast holds daytime values too;
+   the Explainer says the gusts are for the whole day.
+   0.67.6 (2026-11-02): a day's sky symbol, precip chance and amount are for its daytime, 6 AM to 6 PM at the
+   place; today's only for the hours still ahead. Past days and the high and low keep the whole day. Until now they were
+   Open-Meteo's daily values, midnight to midnight, so 5 AM rain showed all day (JG: "Bright sun in ABQ, our forecast is
+   wrong, WU is closer"). The Explainer says so (JG: "We need to explain this in the explainer").
+   0.67.5 (2026-11-01): the forecast time line goes where Options says, always; it no longer moves to the top
    when the table is taller than the screen (JG: "forecast will not appear at the bottom despite the option being
    selected"; "I don't care about refresh at all").
    0.67.4 (2026-11-01): a profile saved with no places checked holds settings only: its Load applies the
@@ -670,6 +677,39 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
 <div id="ab"></div>
 
 <script src="data/wx_prev_t_2026-10-23.js"></script>
+<script>
+// 0.67.6: a day's precip chance, amount and sky are for its daytime, 6 AM to 6 PM at the place; today's for the hours still
+// ahead (after 6 PM, the rest of the evening). Past days keep the whole day: what fell. (JG, 2026-11-02: "Bright sun in ABQ,
+// our forecast is wrong, WU is closer": Open-Meteo's daily values run midnight to midnight, so 5 AM rain showed all day.)
+// An hour row is [time, temp, chance, gust, amount, weather code, cloud cover]; a copy made before 0.67.6 has no code or cover,
+// and its daily code is kept.
+window.WXDAY = {
+  rows(days, hours, now, today) {   // now: the place's hour as 'YYYY-MM-DDTHH:00', or null (every day its whole daytime);
+    // today: the table's today (the device's date); days before it are past and keep the whole day (review of 0.67.6)
+    if (!Array.isArray(hours) || !hours.length) return days;
+    const sum = a => a.reduce((x, y) => x + y, 0);
+    return days.map(r => {
+      const iso = r[0]; if (today && iso < today) return r;
+      let a = iso + 'T06:00', b = iso + 'T18:00';
+      if (now && now > a) { a = now; if (a >= b && now.slice(0, 10) === iso) b = iso + 'T23:59'; }   // the hours still ahead at the place
+      const hs = hours.filter(h => h[0] >= a && h[0] < b); if (!hs.length) return r;
+      const pp = hs.map(h => h[2]).filter(v => v != null), q = hs.map(h => h[4]).filter(v => v != null);
+      const wc = hs.map(h => h[5]).filter(v => v != null), cc = hs.map(h => h[6]).filter(v => v != null), sig = wc.filter(c => c >= 45);
+      const sky = m => m < 20 ? 0 : m < 70 ? 2 : 3;   // average cloud cover: sunny, partly cloudy, cloudy
+      const o = r.slice();
+      if (pp.length) o[3] = Math.max(...pp);
+      if (q.length) o[4] = Math.round(sum(q) * 100) / 100;
+      if (sig.length) o[6] = Math.max(...sig);   // fog, drizzle, rain, snow or storms in those hours: the most significant
+      else if (cc.length) o[6] = sky(sum(cc) / cc.length);
+      return o;
+    });
+  },
+  now(tz) {   // the hour now at a time zone (an IANA name; the device's when none)
+    try { const f = {}; new Intl.DateTimeFormat('en-CA', { timeZone: tz || undefined, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hourCycle: 'h23' })
+      .formatToParts(new Date()).forEach(x => { f[x.type] = x.value; }); return `${f.year}-${f.month}-${f.day}T${f.hour}:00`; } catch (e) { return null; }
+  },
+};
+</script>
 <script>window.WXP = window.WXT;   // the previous copy, for "changed since"</script>
 <script src="data/wx_snapshot_t_2026-10-29.js"></script>
 <script src="data/wx_alerts_t_2026-10-29.js"></script>
@@ -713,7 +753,7 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
   say('Getting the latest forecast…');
   const fx = 'https://api.open-meteo.com/v1/forecast?latitude=' + places.map(p => p.lat).join(',') + '&longitude=' + places.map(p => p.lon).join(',')
     + '&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_gusts_10m_max,weather_code'
-    + '&hourly=temperature_2m,precipitation_probability,wind_gusts_10m,precipitation'
+    + '&hourly=temperature_2m,precipitation_probability,wind_gusts_10m,precipitation,weather_code,cloud_cover'
     + '&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&past_days=7&forecast_days=16';
   const KEEP = ['event', 'severity', 'urgency', 'certainty', 'onset', 'effective', 'ends', 'expires', 'headline', 'senderName', 'areaDesc'];
   const MODELS = [['ncep_hrrr_conus', 'HRRR'], ['ncep_nbm_conus', 'NBM'], ['ncep_gfs013', 'GFS']];
@@ -732,13 +772,14 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
     const D = F.map(d => ({ elevFt: Math.round((d.elevation || 0) * 3.28084), offset: offStr(d.utc_offset_seconds || 0), tz: d.timezone || null,
       days: d.daily.time.map((t, i) => [t, rnd(d.daily.temperature_2m_max[i]), rnd(d.daily.temperature_2m_min[i]), d.daily.precipitation_probability_max[i] ?? 0,
         rnd(d.daily.precipitation_sum[i], 2), rnd(d.daily.wind_gusts_10m_max[i]), d.daily.weather_code ? d.daily.weather_code[i] : null]),
-      hours: d.hourly.time.map((t, i) => [t, rnd(d.hourly.temperature_2m[i]), d.hourly.precipitation_probability[i], rnd(d.hourly.wind_gusts_10m[i]), rnd(d.hourly.precipitation[i], 2)]) }));
+      hours: d.hourly.time.map((t, i) => [t, rnd(d.hourly.temperature_2m[i]), d.hourly.precipitation_probability[i], rnd(d.hourly.wind_gusts_10m[i]), rnd(d.hourly.precipitation[i], 2),
+        d.hourly.weather_code ? d.hourly.weather_code[i] : null, d.hourly.cloud_cover ? d.hourly.cloud_cover[i] : null]) }));
     const n = BUNDLED.places.length;
     window.WXT = { fetched, source: 'Open-Meteo', pastDays: 7, live: true,
       places: places.slice(0, n).map((p, i) => ({ name: p.name, note: p.note, lat: p.lat, lon: p.lon, tz: D[i].tz, elevFt: D[i].elevFt, days: D[i].days, hours: D[i].hours })) };
     added.forEach((x, j) => { const d = D[n + j]; x.wx = { fetched: new Date(now).toISOString(), offset: d.offset, tz: d.tz, elevFt: d.elevFt, days: d.days, hours: d.hours }; });
     // the change arrows compare with the forecast before this one, once that one is at least an hour old
-    const slim = { fetched, places: places.map((p, i) => ({ name: p.name, days: D[i].days })) };
+    const slim = { fetched, places: places.map((p, i) => ({ name: p.name, days: WXDAY.rows(D[i].days, D[i].hours, null, null) })), day: 1 };   // daytime values (0.67.6), marked so (0.67.7)
     if (L.cur && now - Date.parse(L.cur.fetched) >= HOUR) L.prev = L.cur;
     L.cur = slim; L.last = { wxt: window.WXT };
     if (!write(LIVE, L)) { delete L.last; write(LIVE, L); }   // too big to keep: keep the arrows' copies only
@@ -797,7 +838,7 @@ function placeZone(name) {   // a place's own time zone, from its forecast; null
 window.WXTIME = { alert(iso, name) { try { const ms = Date.parse(iso); if (!Number.isFinite(ms)) return null;   // null: the alerts module shows its own time
   if (S.tz !== 'place') return when(ms); const z = placeZone(name); return z ? whenAt(ms, z) : null; } catch (e) { return null; } } };
 const TODAY = W.fetched.slice(0, 10), ALL = W.places[0].days.map(d => d[0]), TI = ALL.indexOf(TODAY);
-W.places.forEach(p => { p.byDay = Object.fromEntries(p.days.map(r => [r[0], r])); });
+W.places.forEach(p => { p.byDay = Object.fromEntries(WXDAY.rows(p.days, p.hours, WXDAY.now(p.tz), TODAY).map(r => [r[0], r])); });   // daytime (0.67.6)
 const NODAY = [null, null, null, 0, null, 0];   // a day an added place's copy does not cover: an empty box
 const PREV = {}; ((window.WXP && window.WXP.places) || []).forEach(p => { PREV[p.name] = Object.fromEntries(p.days.map(r => [r[0], r])); });
 const CLIM = {}; ((window.WXC && window.WXC.places) || []).forEach(p => { CLIM[p.name] = p; });
@@ -831,7 +872,7 @@ function placeOf(n) {
   if (!x.wx) return W.places.find(p => p.name === n) || null;
   if (!ADDED[n] || ADDED[n].src !== x.wx) {
     ADDED[n] = { name: x.name, note: x.note || '', lat: x.lat, lon: x.lon, elevFt: x.wx.elevFt, days: x.wx.days, hours: x.wx.hours, src: x.wx,
-      byDay: Object.fromEntries(x.wx.days.map(r => [r[0], r])) };
+      byDay: Object.fromEntries(WXDAY.rows(x.wx.days, x.wx.hours, WXDAY.now(x.wx.tz), TODAY).map(r => [r[0], r])) };   // daytime (0.67.6)
   }
   return ADDED[n];
 }
@@ -877,7 +918,7 @@ function chgHi(p, iso, hi) {
   const d = hi - o[1]; return Math.abs(d) >= CHG_T ? `<span class="chg" title="high was ${T(o[1])}${U()} in the previous copy">${FAT[d > 0 ? 'up' : 'dn']}</span>` : '';
 }
 function chgRain(p, iso, pp) {
-  if (pp == null) return '';
+  if (pp == null || iso === TODAY || !(window.WXP && WXP.day)) return '';   // today's chance covers only the hours ahead (0.67.6); a whole-day previous copy is not compared (0.67.7)
   const o = S.changes && iso >= TODAY && PREV[p.name] && PREV[p.name][iso]; if (!o || o[3] == null) return '';
   const d = pp - o[3]; return Math.abs(d) >= CHG_P ? `<span class="chg" title="precip chance was ${o[3]}% in the previous copy">${FAT[d > 0 ? 'up' : 'dn']}</span>` : '';
 }
@@ -1371,11 +1412,11 @@ const offStr = s => `${s < 0 ? '-' : '+'}${pad(Math.floor(Math.abs(s) / 3600))}:
 const rnd = (v, n) => v == null ? null : n ? Math.round(v * 10 ** n) / 10 ** n : Math.round(v);
 async function getJson(url, opts) { const r = await fetch(url, opts); if (r.status === 429) throw new Error('Open-Meteo is busy (too many requests); try again in a minute'); if (!r.ok) throw Object.assign(new Error('the server answered ' + r.status), { status: r.status }); return r.json(); }
 async function fetchForecast(lat, lon) {   // the same request as fetch_snapshot_c.py, for one place
-  const d = await getJson(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_gusts_10m_max,weather_code&hourly=temperature_2m,precipitation_probability,wind_gusts_10m,precipitation&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&past_days=${W.pastDays || 7}&forecast_days=16`);
+  const d = await getJson(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_gusts_10m_max,weather_code&hourly=temperature_2m,precipitation_probability,wind_gusts_10m,precipitation,weather_code,cloud_cover&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&past_days=${W.pastDays || 7}&forecast_days=16`);
   const D = d.daily, H = d.hourly;
   return { fetched: new Date().toISOString(), offset: offStr(d.utc_offset_seconds || 0), tz: d.timezone || null, elevFt: Math.round((d.elevation || 0) * 3.28084),
     days: D.time.map((t, i) => [t, rnd(D.temperature_2m_max[i]), rnd(D.temperature_2m_min[i]), D.precipitation_probability_max[i] ?? 0, rnd(D.precipitation_sum[i], 2), rnd(D.wind_gusts_10m_max[i]), D.weather_code ? D.weather_code[i] : null]),
-    hours: H.time.map((t, i) => [t, rnd(H.temperature_2m[i]), H.precipitation_probability[i], rnd(H.wind_gusts_10m[i]), rnd(H.precipitation[i], 2)]) };
+    hours: H.time.map((t, i) => [t, rnd(H.temperature_2m[i]), H.precipitation_probability[i], rnd(H.wind_gusts_10m[i]), rnd(H.precipitation[i], 2), H.weather_code ? H.weather_code[i] : null, H.cloud_cover ? H.cloud_cover[i] : null]) };
 }
 async function fetchAlerts(lat, lon) {      // National Weather Service, as fetch_alerts.py
   const j = await getJson(`https://api.weather.gov/alerts/active?point=${lat.toFixed(4)},${lon.toFixed(4)}`, { headers: { Accept: 'application/geo+json' } });
@@ -1668,6 +1709,9 @@ function drawKey() {
   const k = (smp, what, how, box) => items.push(`<div class="kitem">${smp}<div class="words">${box ? `<label class="ck"><input type="checkbox" ${box}><b>${what}</b></label>` : `<b>${what}</b>`} ${how}</div></div>`);
   const eck = key => `data-ek="${key}"${o[key] ? ' checked' : ''}`;
   const past = sample('80px', '<div class="hd past">Wed 22</div>'), today = sample('80px', '<div class="hd today">Thu 29</div>');
+  items.push('<div class="words" style="grid-column:1 / -1;margin:4px 0"><b>Which hours a box covers.</b> The sky symbol, the precip chance and the amount are for the daytime, '
+    + '6 AM to 6 PM at the place. Today\'s are only for the hours still ahead, so rain that fell earlier this morning no longer shows. '
+    + 'The high, the low and the wind gusts are for the whole day. Rain at night shows in the "day and night" table. Past days show the whole day: what fell.</div>');   // 0.67.6 (JG: "We need to explain this in the explainer")
   if (lay === 'EB') {
     const ebs = (kind, hi, lo, l2 = '<span></span><span></span>') => sample('80px', `<div class="c eb"><div class="ebtop">${skySvg(kind)}<span class="ebt"><span class="hi">${T(hi)}</span><span class="lo">${T(lo)}</span></span></div><div class="l2">${l2}</div></div>`);
     head('Temperature');
@@ -1676,7 +1720,7 @@ function drawKey() {
       'Changes since the previous forecast', '↑ or ↓ beside a high that moved 3 °F or more, or a precip chance that moved 20 points or more.', `data-chg${S.changes ? ' checked' : ''}`);
     head('Sky');
     [['sun', 'Sunny'], ['part', 'Partly cloudy'], ['cloud', 'Cloudy'], ['fog', 'Fog'], ['drizzle', 'Drizzle'], ['rain', 'Rain'], ['showers', 'Showers'], ['snow', 'Snow'], ['thunder', 'Thunderstorms']]
-      .forEach(([kind, word]) => k(ebs(kind, 60, 42), word, 'the day\'s most significant weather (Open-Meteo\'s daily weather code).'));
+      .forEach(([kind, word]) => k(ebs(kind, 60, 42), word, 'the daytime sky: fog, drizzle, rain, snow or storms if the forecast has any then; otherwise sunny, partly cloudy or cloudy from the average cloud cover.'));
     head('Precipitation');
     k(ebs('rain', 61, 47, `<span class="r big">${rainTxt(76, 0.12, S.rainshow)}</span><span></span>`), 'Precipitation',
       `in blue, shown from a ${rMin()}% chance${aMin() ? ` with at least ${aMinTxt(aMin())}` : ''}: ${{ chance: 'the chance', amount: `the amount for the day, ${MM() ? 'millimeters' : 'inches'}`, both: `the chance and the amount for the day, ${MM() ? 'millimeters' : 'inches'}` }[S.rainshow]}. Bold at 50% or more.`);
@@ -2103,7 +2147,7 @@ $('privBtn').addEventListener('click', () => {   // 0.65.1: the privacy policy o
   const b = $('privBtn'), open = $('priv').hidden;
   $('priv').hidden = !open; b.classList.toggle('on', open); b.setAttribute('aria-expanded', String(open));
 });
-const VERSION = '0.67.5', VERSION_DATE = '2026-11-01';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
+const VERSION = '0.67.7', VERSION_DATE = '2026-11-01';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
 $('brand').textContent = `WxTable ${VERSION}`;
 $('aboutName').textContent = `WxTable™ v${VERSION} · ${VERSION_DATE}`;   // ™ on About only (0.65)   // the Rydn format, as DoStack's About
 $('strip').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; save(); showTab(); });
