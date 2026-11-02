@@ -11,10 +11,20 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>WxTable 0.67</title>
+<title>WxTable 0.67.3</title>
 <link rel="icon" type="image/png" sizes="32x32" href="WxTable_favicon_32_v01.png">
 <style>
-/* WxTable 0.67 (2026-11-01): Options has "Times in": your device's time zone (the default) or each place's own; watch,
+/* WxTable 0.67.3 (2026-11-01): review of 0.67.2: Load brings back a place just deleted (not yet undone) when the set
+   holds it, instead of adding a hidden copy each time; a built-in place matches only the built-in entry.
+   0.67.2 (2026-11-01): Load never removes a place: loading a set or profile checks exactly its places, adds
+   any not in the list, and leaves every other place in the list unchecked (JG: "Now a 4-place set leaves your list with
+   just those 4. - completely unacceptable"). A link opened in a new browser does the same. A set sent to you counts its
+   checked places (JG: "Make sure the count is correct").
+   0.67.1 (2026-11-01): a saved set or profile is its checked places only: Save set and Save Profile keep only
+   the checked places, a set's count is its checked places, and Load brings in only those, the same rule as Send link
+   (JG: "17 places: wrong"; "What did we just fix above? Why would it say 17 when the answer is FOUR?"). Sets saved
+   before 0.67.1 keep their unchecked places inside, but count and load as their checked ones.
+   0.67 (2026-11-01): Options has "Times in": your device's time zone (the default) or each place's own; watch,
    warning and advisory times now carry their time zone (alerts module wxt_alerts_v05.js) (JG: "Why does the warning /
    watch text not show the time zone? Do a complete audit of time everywhere in the app"; "Default is device zone but there
    needs to be an option"; "Yes, under Options"). The Explainer says the day and night hours are each place's own. The two
@@ -1407,11 +1417,12 @@ $('aadd').addEventListener('click', async () => {
 
 // saved sets of locations: a name and a description; the date and time are recorded automatically
 function drawSetsList() {
-  $('slist').innerHTML = S.sets.map((s, i) => s.del ? `<div class="row2" style="margin:3px 0"><span class="sec">Deleted set <b>${esc(s.name)}</b></span><button class="btn" data-sundo="${i}">Undo</button></div>` : `<div class="row2" style="margin:3px 0"><button class="btn" data-sload="${i}">Load</button><b>${esc(s.name)}</b>${s.desc ? `<span>${esc(s.desc)}</span>` : ''}<span class="sec">${s.places.length} places · ${s.sent ? 'sent to you' : 'saved'} ${when(s.at)}</span><button class="btn" data-ssend="${i}">Send link</button><button class="del" data-sdel="${i}">Delete</button></div>`).join('');
+  $('slist').innerHTML = S.sets.map((s, i) => s.del ? `<div class="row2" style="margin:3px 0"><span class="sec">Deleted set <b>${esc(s.name)}</b></span><button class="btn" data-sundo="${i}">Undo</button></div>` : `<div class="row2" style="margin:3px 0"><button class="btn" data-sload="${i}">Load</button><b>${esc(s.name)}</b>${s.desc ? `<span>${esc(s.desc)}</span>` : ''}<span class="sec">${nOn(s.places)} place${nOn(s.places) === 1 ? '' : 's'} · ${s.sent ? 'sent to you' : 'saved'} ${when(s.at)}</span><button class="btn" data-ssend="${i}">Send link</button><button class="del" data-sdel="${i}">Delete</button></div>`).join('');
 }
 $('ssave').addEventListener('click', () => {
   const name = $('sname').value.trim(); if (!name) { $('sname').focus(); return; }
-  const rec = { name, desc: $('sdesc').value.trim(), at: Date.now(), places: S.places.filter(x => !x.del).map(withPos) };
+  if (!S.places.some(x => !x.del && x.on)) { $('smsg').textContent = 'No checked places to save: check the places for the set, then press Save set.'; return; }   // 0.67.1
+  const rec = { name, desc: $('sdesc').value.trim(), at: Date.now(), places: S.places.filter(x => !x.del && x.on).map(withPos) };   // only the checked places (0.67.1)
   const old = S.sets.findIndex(s => s.name === name); if (old >= 0) S.sets[old] = rec; else S.sets.push(rec);
   save(); $('sname').value = ''; $('sdesc').value = ''; drawSetsList();
 });
@@ -1494,24 +1505,34 @@ async function loadPlaces(list, show) {
   }
   return { out, bad };
 }
+function mergePlaces(out) {   // 0.67.2: check exactly out's places, add any not in the list, uncheck the rest; nothing removed
+  const list = S.places.map(y => Object.assign({}, y, { on: false }));
+  const same = (y, x) => y.name === x.name && (x.wx ? y.wx && Math.abs(y.lat - x.lat) + Math.abs(y.lon - x.lon) < 0.05 : !y.wx);   // review: built-in to built-in
+  out.forEach(x => {
+    const y = list.find(z => same(z, x));
+    if (y) { delete y.del; y.on = true; return; }   // review: a place just deleted comes back, never as a hidden copy
+    const n = Object.assign({}, x, { name: uniq(list, x.name), on: true }); delete n.del; list.push(n);
+  });
+  return list;
+}
 async function loadSet(i, btn) {
   if (loading) return; loading = true; btn.disabled = true; $('smsg').textContent = '';
-  let r; try { r = await loadPlaces(S.sets[i].places.filter(x => !x.del), t => busy(btn, t, true)); }
+  let r; try { r = await loadPlaces(S.sets[i].places.filter(x => !x.del && x.on), t => busy(btn, t, true)); }
   finally { busy(btn, 'Load', false); btn.disabled = false; loading = false; }   // review: never left stuck
   const { out, bad } = r;
   if (bad.length || !out.length) { $('smsg').textContent = `Not loaded, your places are unchanged: ${bad.join('; ') || 'no places'}.`; return; }
-  S.places = out; save(); joinAdded(); drawLocs(); drawTable(); drawClim();
+  S.places = mergePlaces(out); save(); joinAdded(); drawLocs(); drawTable(); drawClim();
 }
 function applyProfile(set, places) {
   PROFILE_KEYS.forEach(k => { if (k !== 'places' && set[k] !== undefined) S[k] = JSON.parse(JSON.stringify(set[k])); });
-  if (places) S.places = places;
+  if (places) S.places = mergePlaces(places);
   save(); joinAdded(); fillLayouts(); fillAhead(); fillRain(); drawLocs(); refresh();
 }
 async function loadProfile(i, btn) {
   if (loading) return; loading = true; btn.disabled = true; $('pmsg2').textContent = '';
   const set = JSON.parse(JSON.stringify(S.profiles[i].set));
   let places = null, r = null;
-  try { if (Array.isArray(set.places)) r = await loadPlaces(set.places.filter(x => !x.del), t => busy(btn, t, true)); }
+  try { if (Array.isArray(set.places)) r = await loadPlaces(set.places.filter(x => !x.del && x.on), t => busy(btn, t, true)); }
   finally { busy(btn, 'Load', false); btn.disabled = false; loading = false; }   // review: never left stuck
   if (r) {
     if (r.bad.length || !r.out.length) { $('pmsg2').textContent = `Not loaded, your settings are unchanged: ${r.bad.join('; ') || 'no places'}.`; return; }
@@ -1523,7 +1544,7 @@ async function loadProfile(i, btn) {
 let inbox = null;
 function drawInbox() {
   const b = $('sinbox'); if (!inbox) { b.hidden = true; b.innerHTML = ''; return; }
-  const d = inbox.data, prof = inbox.kind === 'profile', pl = prof ? d.set.places : d.places;
+  const d = inbox.data, prof = inbox.kind === 'profile', pl = (prof ? d.set.places : d.places).filter(x => x.on);   // 0.67.2: its checked places
   b.hidden = false;
   b.innerHTML = `<div><b>${prof ? 'A profile was sent to you' : 'A set of places was sent to you'}:</b> ${esc(d.name)}${!prof && d.desc ? ` · <span>${esc(d.desc)}</span>` : ''}</div>`
     + `<div class="sec">${pl.length} place${pl.length > 1 ? 's' : ''}${prof ? ' and every setting' : ''}: ${pl.map(x => esc(x.name)).join(', ')}</div>`
@@ -1564,10 +1585,10 @@ async function openLinkCode(code) {
   try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* the code stays in the address */ }
   if (!got) { linkSay('This link could not be opened: it may have expired (links last a year after last use).', true); return; }
   if (!firstVisit) { linkSay(''); inbox = got; S.tab = 'locs'; drawInbox(); showTab(); return; }
-  const prof = got.kind === 'profile', { out, bad } = await loadPlaces(prof ? got.data.set.places : got.data.places, t => linkSay(t + '…'));
+  const prof = got.kind === 'profile', { out, bad } = await loadPlaces((prof ? got.data.set.places : got.data.places).filter(x => x.on), t => linkSay(t + '…'));
   if (!out.length) { linkSay(`This link could not be opened: ${bad.join('; ')}.`, true); return; }
   if (prof) { const set = JSON.parse(JSON.stringify(got.data.set)); delete set.places; applyProfile(set, out); $('fromname').textContent = got.data.name; $('fromlink').hidden = false; }
-  else { S.places = out; save(); joinAdded(); drawLocs(); refresh(); }
+  else { S.places = mergePlaces(out); save(); joinAdded(); drawLocs(); refresh(); }
   firstVisit = false; S.tab = 'table'; save(); showTab();
   linkSay(bad.length ? `Not loaded: ${bad.join('; ')}.` : '', !!bad.length);
 }
@@ -1913,6 +1934,7 @@ function drawSets() {
   }
 }
 // Save Profile (R35): a name, with the date and time recorded automatically
+function nOn(list) { return (list || []).filter(x => !x.del && x.on).length; }   // a set's places: its checked ones (0.67.1)
 function withPos(x) {   // a copy of a place that keeps its position even when it is a built-in one (0.67): the set still loads if the built-in places change
   const c = JSON.parse(JSON.stringify(x));
   if (!c.wx && c.lat == null) { const b = W.places.find(q => q.name === c.name); if (b) { c.lat = b.lat; c.lon = b.lon; if (b.note && !c.note) c.note = b.note; } }
@@ -1925,7 +1947,7 @@ function drawProfiles() {
 $('psave').addEventListener('click', () => {
   const name = $('pname').value.trim(); if (!name) { $('pname').focus(); return; }
   const set = {}; PROFILE_KEYS.forEach(k => { if (S[k] !== undefined) set[k] = JSON.parse(JSON.stringify(S[k])); });
-  if (Array.isArray(set.places)) set.places = set.places.filter(x => !x.del).map(withPos);   // 0.67
+  if (Array.isArray(set.places)) set.places = set.places.filter(x => !x.del && x.on).map(withPos);   // 0.67; only the checked places (0.67.1)
   const old = S.profiles.findIndex(p => p.name === name), rec = { name, at: Date.now(), set };
   if (old >= 0) S.profiles[old] = rec; else S.profiles.push(rec);
   save(); $('pname').value = ''; drawProfiles();
@@ -2075,7 +2097,7 @@ $('privBtn').addEventListener('click', () => {   // 0.65.1: the privacy policy o
   const b = $('privBtn'), open = $('priv').hidden;
   $('priv').hidden = !open; b.classList.toggle('on', open); b.setAttribute('aria-expanded', String(open));
 });
-const VERSION = '0.67', VERSION_DATE = '2026-11-01';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
+const VERSION = '0.67.3', VERSION_DATE = '2026-11-01';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
 $('brand').textContent = `WxTable ${VERSION}`;
 $('aboutName').textContent = `WxTable™ v${VERSION} · ${VERSION_DATE}`;   // ™ on About only (0.65)   // the Rydn format, as DoStack's About
 $('strip').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; save(); showTab(); });
