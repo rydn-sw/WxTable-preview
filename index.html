@@ -11,10 +11,12 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>WxTable 0.67.7</title>
+<title>WxTable 0.67.8</title>
 <link rel="icon" type="image/png" sizes="32x32" href="WxTable_favicon_32_v01.png">
 <style>
-/* WxTable 0.67.7 (2026-11-02): review of 0.67.6: past days are the table's (the device's date), so a place in another
+/* WxTable 0.67.8 (2026-11-02): a profile sent as a link keeps "Times in" (wxt_check_v02.js); the Forecasting sources
+   and the About credits no longer end with a project file path (JG: "do 1 and 2 for the next version").
+   0.67.7 (2026-11-02): review of 0.67.6: past days are the table's (the device's date), so a place in another
    time zone is not split near midnight; no precip-change arrow until the previous forecast holds daytime values too;
    the Explainer says the gusts are for the whole day.
    0.67.6 (2026-11-02): a day's sky symbol, precip chance and amount are for its daytime, 6 AM to 6 PM at the
@@ -79,7 +81,7 @@
    saved set and beside each saved profile; the link is the page's address with #s= and an 8-character code, the places
    or profile kept behind it by WxTable's link service (wxtable-links, a Cloudflare Worker), cleared after a year unopened.
    Someone who never used WxTable in this browser sees what was sent at once (a profile with a "From a link" line);
-   anyone else is asked first and it is saved to Saved sets or Profiles. Everything from a link passes wxt_check_v01.js,
+   anyone else is asked first and it is saved to Saved sets or Profiles. Everything from a link passes wxt_check_v02.js,
    the same check the link service uses. From the 0.65 draft's review: one Load at a time; a Load replaces the list only
    when every place is ready; a sent place named like a built-in one at another position gets "(sent)". About: the six
    sections of WxTable_About_Mockup_v01.html (trademark sign, Support Rydn, Tell a friend with a QR code, Share on social
@@ -668,7 +670,7 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
   <h2>Apps we like</h2>
   <div style="max-width:640px">Smoke: <a href="https://www.airnow.gov/" target="_blank" rel="noopener">AirNow</a> &bull; Wildfires with county alerts you set: <a href="https://www.watchduty.org/" target="_blank" rel="noopener">Watch Duty</a> &bull; Radar with flood alerts: <a href="https://myradar.com/" target="_blank" rel="noopener">MyRadar</a></div>
   <h2>Data</h2>
-  <div class="sec" style="font-size:13px;max-width:640px">Forecasts and past days: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Weather data by Open-Meteo.com</a> (free for non-commercial use, with credit). Weather Service alerts: National Weather Service, <a href="https://www.weather.gov/documentation/services-web-api" target="_blank" rel="noopener">api.weather.gov</a> (public domain); US only, so places elsewhere show none. The usual weather for each date, and the Climate tab: Open-Meteo Historical Weather API, 1991–2020. Forecast accuracy (Forecasting tab): WxTable's own research, research\WxForecastResearch_v04.md, 2026-10-24. Visits: counted by <a href="https://www.goatcounter.com/" target="_blank" rel="noopener">GoatCounter</a>, without cookies and without anything that identifies you; your choices and places stay in this browser.</div>
+  <div class="sec" style="font-size:13px;max-width:640px">Forecasts and past days: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Weather data by Open-Meteo.com</a> (free for non-commercial use, with credit). Weather Service alerts: National Weather Service, <a href="https://www.weather.gov/documentation/services-web-api" target="_blank" rel="noopener">api.weather.gov</a> (public domain); US only, so places elsewhere show none. The usual weather for each date, and the Climate tab: Open-Meteo Historical Weather API, 1991–2020. Forecast accuracy (Forecasting tab): WxTable's own research, 2026-10-24. Visits: counted by <a href="https://www.goatcounter.com/" target="_blank" rel="noopener">GoatCounter</a>, without cookies and without anything that identifies you; your choices and places stay in this browser.</div>
   <h2>This device</h2>   <!-- at the end of About (JG, 2026-10-30) -->
   <div class="sec" style="font-size:13px;max-width:640px">What this browser reports about the device, and what the page can measure. WxTable adapts to the measured things (size, touch, settings), not to the device's name. It updates when you turn the device or change the window.</div>
   <div id="devPic" class="devpic"></div>
@@ -717,7 +719,7 @@ window.WXDAY = {
 <script src="data/wx_normals_t_2026-10-29.js"></script>
 <script src="data/wx_runs_2026-10-29.js"></script>
 <script src="wxt_alerts_v05.js"></script>
-<script src="wxt_check_v01.js"></script>
+<script src="wxt_check_v02.js"></script>
 <script>
 // 0.56: live data (JG: "I want a LIVE prototype"; "Ready for live data"). Before the main script starts, ask Open-Meteo for the
 // forecast of every place (one request), the National Weather Service for each place's alerts, and Open-Meteo for the model
@@ -1798,7 +1800,7 @@ function drawFcst() {
     `<b>Your spot is not the forecast's spot.</b> A forecast is made for a point on a grid, not your exact spot, and its accuracy is checked at airports. Highs fall about ${dT(3.4).toFixed(1)} ${u} for every 1,000 ft you go up (Weather Service measured average).`,
     '<b>Weather Underground</b> uses the same forecast as The Weather Channel. In the accuracy comparisons found, it is one of the most accurate few. They are close to each other, and which one is first changes from month to month. Its link here is for another good forecast.',
   ].map(x => `<div>${x}</div>`).join('');
-  $('fsrc').textContent = 'Sources: ForecastWatch 2005–2016 report (the temperature bars); NOAA EMC GEFS verification, 2025 (the precip bars, read from its charts); ECMWF evaluation, Haiden and others 2025 (the European limit); Bickel and others 2011 and Bickel and Kim 2008 (precip chance bias); NOAA NESDIS education page; National Weather Service "What is the chance of rain?" (its title); NWS lapse-rate study, western North Carolina. Full research with links: research\\WxForecastResearch_v04.md (2026-10-24).';
+  $('fsrc').textContent = 'Sources: ForecastWatch 2005–2016 report (the temperature bars); NOAA EMC GEFS verification, 2025 (the precip bars, read from its charts); ECMWF evaluation, Haiden and others 2025 (the European limit); Bickel and others 2011 and Bickel and Kim 2008 (precip chance bias); NOAA NESDIS education page; National Weather Service "What is the chance of rain?" (its title); NWS lapse-rate study, western North Carolina.';
 }
 
 // ---------- Climate: the last week, month, 3, 6 and 12 months and the year to date against 1991-2020 ----------
@@ -1989,7 +1991,7 @@ function withPos(x) {   // a copy of a place that keeps its position even when i
   if (!c.wx && c.lat == null) { const b = W.places.find(q => q.name === c.name); if (b) { c.lat = b.lat; c.lon = b.lon; if (b.note && !c.note) c.note = b.note; } }
   return c;
 }
-const PROFILE_KEYS = ['auto', 'layout', 'ahead', 'lines', 'which', 'rainshow', 'rainMin', 'amtMin', 'units', 'amt', 'cwin', 'changes', 'wu', 'places', 'e', 'ft', 'tz'];   // tz: 0.67 (a link drops it: wxt_check_v01.js does not know it)
+const PROFILE_KEYS = ['auto', 'layout', 'ahead', 'lines', 'which', 'rainshow', 'rainMin', 'amtMin', 'units', 'amt', 'cwin', 'changes', 'wu', 'places', 'e', 'ft', 'tz'];   // tz: 0.67 (a link keeps it since wxt_check_v02.js, 0.67.8)
 function drawProfiles() {
   $('plistp').innerHTML = S.profiles.map((p, i) => `<div class="row2" style="margin:3px 0"><button class="btn" data-load="${i}">Load</button><b>${esc(p.name)}</b><span class="sec">${p.sent ? 'sent to you' : 'saved'} ${when(p.at)}</span><button class="btn" data-psend="${i}">Send link</button></div>`).join('');
 }
@@ -2147,7 +2149,7 @@ $('privBtn').addEventListener('click', () => {   // 0.65.1: the privacy policy o
   const b = $('privBtn'), open = $('priv').hidden;
   $('priv').hidden = !open; b.classList.toggle('on', open); b.setAttribute('aria-expanded', String(open));
 });
-const VERSION = '0.67.7', VERSION_DATE = '2026-11-01';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
+const VERSION = '0.67.8', VERSION_DATE = '2026-11-02';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
 $('brand').textContent = `WxTable ${VERSION}`;
 $('aboutName').textContent = `WxTable™ v${VERSION} · ${VERSION_DATE}`;   // ™ on About only (0.65)   // the Rydn format, as DoStack's About
 $('strip').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; save(); showTab(); });
