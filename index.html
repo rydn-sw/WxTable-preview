@@ -11,10 +11,15 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>WxTable 0.67.3</title>
+<title>WxTable 0.67.5</title>
 <link rel="icon" type="image/png" sizes="32x32" href="WxTable_favicon_32_v01.png">
 <style>
-/* WxTable 0.67.3 (2026-11-01): review of 0.67.2: Load brings back a place just deleted (not yet undone) when the set
+/* WxTable 0.67.5 (2026-11-01): the forecast time line goes where Options says, always; it no longer moves to the top
+   when the table is taller than the screen (JG: "forecast will not appear at the bottom despite the option being
+   selected"; "I don't care about refresh at all").
+   0.67.4 (2026-11-01): a profile saved with no places checked holds settings only: its Load applies the
+   settings and leaves the place list as it is, and Save Profile says so (since 0.67.1 such a profile could not be loaded).
+   0.67.3 (2026-11-01): review of 0.67.2: Load brings back a place just deleted (not yet undone) when the set
    holds it, instead of adding a hidden copy each time; a built-in place matches only the built-in entry.
    0.67.2 (2026-11-01): Load never removes a place: loading a set or profile checks exactly its places, adds
    any not in the list, and leaves every other place in the list unchecked (JG: "Now a 4-place set leaves your list with
@@ -484,7 +489,6 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
 .ftrow { display:flex; align-items:center; gap:4px; }
 #pTable { display:flex; flex-direction:column; }
 #pTable.ftbottom .ftrow { order:2; }   /* the forecast time line under the table (0.50) */
-#pTable.ftbottom.ftshort .ftrow { order:0; }   /* the table taller than the screen: at the top, so Refresh stays in reach (0.64) */
 .ftrow .ft { flex:1 1 auto; min-width:0; }
 .ftrow.crowd { flex-wrap:wrap; }   /* the days chooser and arrows moved here: the text gets its own line (0.64.2) */
 .ftrow.crowd .ft { flex-basis:100%; }
@@ -1155,7 +1159,6 @@ function fit(scrollToToday) {   // columns keep one compact width, however many 
   t.style.paddingRight = Math.max(0, vw - sz.nameW - ahead() * per * cw) + 'px';
   const band = t.querySelector('.fband'), avail = window.innerHeight - $('strip').offsetHeight - $('livemsg').offsetHeight - $('fromlink').offsetHeight - $('ftrow').offsetHeight - 7 - Math.round(18 * TK) - (band ? band.offsetHeight : 0) - (tw.offsetHeight - tw.clientHeight), n = Math.max(1, chosen().length);
   t.style.setProperty('--rh', Math.min(Math.round(sz.minRh * 1.5), Math.max(sz.minRh, Math.floor(avail / n))) + 'px');
-  $('pTable').classList.toggle('ftshort', Math.floor(avail / n) < sz.minRh);   // rows at their smallest still too tall for the screen
   if (scrollToToday) tw.scrollLeft = (nd - ahead()) * per * cw;
   navState();
 }
@@ -1532,13 +1535,15 @@ async function loadProfile(i, btn) {
   if (loading) return; loading = true; btn.disabled = true; $('pmsg2').textContent = '';
   const set = JSON.parse(JSON.stringify(S.profiles[i].set));
   let places = null, r = null;
-  try { if (Array.isArray(set.places)) r = await loadPlaces(set.places.filter(x => !x.del && x.on), t => busy(btn, t, true)); }
+  const want = Array.isArray(set.places) ? set.places.filter(x => !x.del && x.on) : [];   // 0.67.4: none = settings only
+  try { if (want.length) r = await loadPlaces(want, t => busy(btn, t, true)); }
   finally { busy(btn, 'Load', false); btn.disabled = false; loading = false; }   // review: never left stuck
   if (r) {
     if (r.bad.length || !r.out.length) { $('pmsg2').textContent = `Not loaded, your settings are unchanged: ${r.bad.join('; ') || 'no places'}.`; return; }
     places = r.out;
   }
   delete set.places; applyProfile(set, places);
+  if (!want.length) $('pmsg2').textContent = 'Loaded the settings. This profile holds no places, so your places are unchanged.';   // 0.67.4
 }
 // Opening a link: someone new to WxTable in this browser sees it at once; anyone else is asked first (R70)
 let inbox = null;
@@ -1881,7 +1886,7 @@ function drawSets() {
     ['Table type', sel('olayout', ORDER.map(v => ({ k: v, name: NAME(v) })), S.layout), ''],   // in step with the top row's chooser (0.47)
     ['Days ahead', sel('oahead', AHEAD, String(ahead())), `<span class="sec">${ahead()} days from today; past days to the left</span>`],
     ['Forecast time', sel('ftsel', Object.entries(FT_STYLES).map(([k, v]) => ({ k, name: `${k} ${v}` })), S.ft), '<span class="sec">Under or over the table: when the forecast was made, and when the next one is due. All five below; yellow outline = in use</span>'],
-    ['Forecast time at', sel('ftpos', [{ k: 'bottom', name: 'Bottom of the table' }, { k: 'top', name: 'Top of the table' }], S.ftPos), '<span class="sec">Where the forecast time line goes, with the day arrows when they are there (style 4 is inside the table). On a screen too short for the whole table it goes at the top, so Refresh stays in reach.</span>'],
+    ['Forecast time at', sel('ftpos', [{ k: 'bottom', name: 'Bottom of the table' }, { k: 'top', name: 'Top of the table' }], S.ftPos), '<span class="sec">Where the forecast time line goes, with the day arrows when they are there (style 4 is inside the table).</span>'],
     ['Auto refresh', sel('auto', [{ k: 'run', name: 'Alerts 10 min, forecast 3 h' }, { k: 'off', name: 'Off' }], S.auto === 'off' ? 'off' : 'run'), '<span class="sec">While the page is on screen: Weather Service alerts checked every 10 minutes; a new forecast at most every 3 hours, a few minutes after a model run is expected (the times on the forecast line), not while you type or choose. Off: only when you press Manual Refresh or open the page. The update frequency is fixed; if you need it changed, email <a href="mailto:support@rydnsoftware.com">support@rydnsoftware.com</a>.</span>'],
     ...Object.entries(FT_STYLES).map(([k, v]) => [`${k} ${v}`, '<span></span>', ftSample(k)]),
     ['Times in', sel('tzsel', [{ k: 'device', name: 'Your device\'s time zone' }, { k: 'place', name: 'Each place\'s own time zone' }], S.tz === 'place' ? 'place' : 'device'), '<span class="sec">Each place\'s own: watch, warning and advisory times in that place\'s time zone. Times that belong to no one place (when the forecast was made, 7 Day Precip\'s days) stay in your device\'s zone. The day and night halves in the table are always each place\'s own 6 AM to 6 PM.</span>'],
@@ -1951,6 +1956,7 @@ $('psave').addEventListener('click', () => {
   const old = S.profiles.findIndex(p => p.name === name), rec = { name, at: Date.now(), set };
   if (old >= 0) S.profiles[old] = rec; else S.profiles.push(rec);
   save(); $('pname').value = ''; drawProfiles();
+  $('pmsg2').textContent = set.places && set.places.length ? '' : `Saved "${name}": no places were checked, so it holds settings only.`;   // 0.67.4
 });
 $('plistp').addEventListener('click', e => {   // 0.65: Load fetches a sent profile's places first; Send link
   const b = e.target.closest('[data-load]'), sd = e.target.closest('[data-psend]');
@@ -2097,7 +2103,7 @@ $('privBtn').addEventListener('click', () => {   // 0.65.1: the privacy policy o
   const b = $('privBtn'), open = $('priv').hidden;
   $('priv').hidden = !open; b.classList.toggle('on', open); b.setAttribute('aria-expanded', String(open));
 });
-const VERSION = '0.67.3', VERSION_DATE = '2026-11-01';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
+const VERSION = '0.67.5', VERSION_DATE = '2026-11-01';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
 $('brand').textContent = `WxTable ${VERSION}`;
 $('aboutName').textContent = `WxTable™ v${VERSION} · ${VERSION_DATE}`;   // ™ on About only (0.65)   // the Rydn format, as DoStack's About
 $('strip').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; save(); showTab(); });
