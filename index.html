@@ -11,10 +11,14 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>WxTable 0.67.8</title>
+<title>WxTable 0.67.9</title>
 <link rel="icon" type="image/png" sizes="32x32" href="WxTable_favicon_32_v01.png">
 <style>
-/* WxTable 0.67.8 (2026-11-02): a profile sent as a link keeps "Times in" (wxt_check_v02.js); the Forecasting sources
+/* WxTable 0.67.9 (2026-11-17): when Open-Meteo's main address does not answer within 6 seconds, the forecast and the
+   model-run times come from its backup address, previous-runs-api.open-meteo.com, and the message under the table says so
+   (open-meteo/open-meteo#2329: the US West server often does not answer; JG: "I need the app immediately, and there is no
+   new forecast. Not good.").
+   0.67.8 (2026-11-02): a profile sent as a link keeps "Times in" (wxt_check_v02.js); the Forecasting sources
    and the About credits no longer end with a project file path (JG: "do 1 and 2 for the next version").
    0.67.7 (2026-11-02): review of 0.67.6: past days are the table's (the device's date), so a place in another
    time zone is not split near midnight; no precip-change arrow until the previous forecast holds daytime values too;
@@ -740,8 +744,8 @@ window.WXDAY = {
   const offStr = s => `${s < 0 ? '-' : '+'}${pad(Math.floor(Math.abs(s) / 3600))}:${pad(Math.floor(Math.abs(s) % 3600 / 60))}`;
   const isoNow = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}${offStr(-d.getTimezoneOffset() * 60)}`; };
   const rnd = (v, n) => v == null ? null : n ? Math.round(v * 10 ** n) / 10 ** n : Math.round(v);
-  async function get(url, opts) {
-    const c = new AbortController(), t = setTimeout(() => c.abort(), LIMIT);
+  async function get(url, opts, ms) {
+    const c = new AbortController(), t = setTimeout(() => c.abort(), ms || LIMIT);
     try { const r = await fetch(url, Object.assign({ signal: c.signal }, opts)); if (!r.ok) throw Object.assign(new Error('the server answered ' + r.status), { status: r.status }); return await r.json(); }
     finally { clearTimeout(t); }
   }
@@ -753,22 +757,36 @@ window.WXDAY = {
   const added = (Array.isArray(S.places) ? S.places : []).filter(x => x && x.wx && Number.isFinite(+x.lat) && Number.isFinite(+x.lon) && x.lat !== '' && x.lon !== '' && !x.del);
   const places = BUNDLED.places.map(p => ({ name: p.name, note: p.note, lat: p.lat, lon: p.lon })).concat(added.map(x => ({ name: x.name, lat: x.lat, lon: x.lon, x })));
   say('Getting the latest forecast…');
-  const fx = 'https://api.open-meteo.com/v1/forecast?latitude=' + places.map(p => p.lat).join(',') + '&longitude=' + places.map(p => p.lon).join(',')
+  // Open-Meteo's main address, then its backup, which answers the same requests (0.67.9); after a failure the backup
+  // first for an hour, so the page does not wait 6 seconds each time
+  const OM = 'https://api.open-meteo.com', OMB = 'https://previous-runs-api.open-meteo.com', OM_WAIT = 6000;
+  const skipMain = L.omBackup && Date.now() - L.omBackup < HOUR && Date.now() >= L.omBackup;   // review: a clock set back does not skip it longer
+  let backup = false;
+  const om = path => (skipMain ? Promise.reject(new Error('skipped')) : get(OM + path, undefined, OM_WAIT)).catch(() => get(OMB + path));
+  // the forecast: all places in one request to the main address; from the backup, one request per place at once, each
+  // tried twice (the backup answered 10 single places in 1 to 3 seconds, but the 10-place request in 2 to 40 or not at all)
+  const forecast = async () => {
+    if (!skipMain) { try { return await get(OM + fx(places), undefined, OM_WAIT); } catch (e) { /* the backup below */ } }
+    const one = p => get(OMB + fx([p])).catch(() => get(OMB + fx([p])));
+    const r = await Promise.all(places.map(one)); backup = true; return r;
+  };
+  const fx = list => '/v1/forecast?latitude=' + list.map(p => p.lat).join(',') + '&longitude=' + list.map(p => p.lon).join(',')
     + '&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_gusts_10m_max,weather_code'
     + '&hourly=temperature_2m,precipitation_probability,wind_gusts_10m,precipitation,weather_code,cloud_cover'
     + '&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&past_days=7&forecast_days=16';
   const KEEP = ['event', 'severity', 'urgency', 'certainty', 'onset', 'effective', 'ends', 'expires', 'headline', 'senderName', 'areaDesc'];
   const MODELS = [['ncep_hrrr_conus', 'HRRR'], ['ncep_nbm_conus', 'NBM'], ['ncep_gfs013', 'GFS']];
   const [F, A, R] = await Promise.all([
-    get(fx).then(d => Array.isArray(d) ? d : [d]).catch(e => e),
+    forecast().then(d => Array.isArray(d) ? d : [d]).catch(e => e),
     // outside the US the Weather Service answers 400 ("out of bounds"): no alerts there, and that place is not asked again
     Promise.allSettled(places.map(p => p.x && p.x.noAlerts ? Promise.resolve([])
       : get(`https://api.weather.gov/alerts/active?point=${(+p.lat).toFixed(4)},${(+p.lon).toFixed(4)}`, { headers: { Accept: 'application/geo+json' } })
       .then(j => (j.features || []).map(f => Object.fromEntries(KEEP.map(k => [k, f.properties[k] ?? null]))))
       .catch(e => { if (e.status !== 400) throw e; if (p.x) p.x.noAlerts = true; return []; }))),
-    Promise.allSettled(MODELS.map(([k]) => get(`https://api.open-meteo.com/data/${k}/static/meta.json`))),
+    Promise.allSettled(MODELS.map(([k]) => om(`/data/${k}/static/meta.json`))),
   ]);
   const now = Date.now(), fetched = isoNow(), notes = [];
+  if (backup) { if (!skipMain) L.omBackup = now; } else delete L.omBackup;   // remembered with the forecast below
 
   if (Array.isArray(F) && F.length === places.length && F.every(d => d && d.daily && d.hourly)) {
     const D = F.map(d => ({ elevFt: Math.round((d.elevation || 0) * 3.28084), offset: offStr(d.utc_offset_seconds || 0), tz: d.timezone || null,
@@ -777,7 +795,8 @@ window.WXDAY = {
       hours: d.hourly.time.map((t, i) => [t, rnd(d.hourly.temperature_2m[i]), d.hourly.precipitation_probability[i], rnd(d.hourly.wind_gusts_10m[i]), rnd(d.hourly.precipitation[i], 2),
         d.hourly.weather_code ? d.hourly.weather_code[i] : null, d.hourly.cloud_cover ? d.hourly.cloud_cover[i] : null]) }));
     const n = BUNDLED.places.length;
-    window.WXT = { fetched, source: 'Open-Meteo', pastDays: 7, live: true,
+    if (backup) notes.push('Forecast from Open-Meteo\'s backup address: its main server did not answer');
+    window.WXT = { fetched, source: backup ? 'Open-Meteo (backup address)' : 'Open-Meteo', pastDays: 7, live: true,
       places: places.slice(0, n).map((p, i) => ({ name: p.name, note: p.note, lat: p.lat, lon: p.lon, tz: D[i].tz, elevFt: D[i].elevFt, days: D[i].days, hours: D[i].hours })) };
     added.forEach((x, j) => { const d = D[n + j]; x.wx = { fetched: new Date(now).toISOString(), offset: d.offset, tz: d.tz, elevFt: d.elevFt, days: d.days, hours: d.hours }; });
     // the change arrows compare with the forecast before this one, once that one is at least an hour old
@@ -1413,8 +1432,14 @@ $('acancel').addEventListener('click', () => { pending = null; $('addrow').hidde
 const offStr = s => `${s < 0 ? '-' : '+'}${pad(Math.floor(Math.abs(s) / 3600))}:${pad(Math.floor(Math.abs(s) % 3600 / 60))}`;
 const rnd = (v, n) => v == null ? null : n ? Math.round(v * 10 ** n) / 10 ** n : Math.round(v);
 async function getJson(url, opts) { const r = await fetch(url, opts); if (r.status === 429) throw new Error('Open-Meteo is busy (too many requests); try again in a minute'); if (!r.ok) throw Object.assign(new Error('the server answered ' + r.status), { status: r.status }); return r.json(); }
+async function omJson(path) {   // Open-Meteo's main address, 6 seconds at most, then its backup, 15 seconds at most (0.67.9)
+  const within = async (url, ms) => { const ac = new AbortController(), t = setTimeout(() => ac.abort(), ms);
+    try { return await getJson(url, { signal: ac.signal }); } finally { clearTimeout(t); } };
+  try { return await within('https://api.open-meteo.com' + path, 6000); }
+  catch (e) { if (/busy/.test(e.message)) throw e; return within('https://previous-runs-api.open-meteo.com' + path, 15000); }
+}
 async function fetchForecast(lat, lon) {   // the same request as fetch_snapshot_c.py, for one place
-  const d = await getJson(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_gusts_10m_max,weather_code&hourly=temperature_2m,precipitation_probability,wind_gusts_10m,precipitation,weather_code,cloud_cover&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&past_days=${W.pastDays || 7}&forecast_days=16`);
+  const d = await omJson(`/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_gusts_10m_max,weather_code&hourly=temperature_2m,precipitation_probability,wind_gusts_10m,precipitation,weather_code,cloud_cover&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&past_days=${W.pastDays || 7}&forecast_days=16`);
   const D = d.daily, H = d.hourly;
   return { fetched: new Date().toISOString(), offset: offStr(d.utc_offset_seconds || 0), tz: d.timezone || null, elevFt: Math.round((d.elevation || 0) * 3.28084),
     days: D.time.map((t, i) => [t, rnd(D.temperature_2m_max[i]), rnd(D.temperature_2m_min[i]), D.precipitation_probability_max[i] ?? 0, rnd(D.precipitation_sum[i], 2), rnd(D.wind_gusts_10m_max[i]), D.weather_code ? D.weather_code[i] : null]),
@@ -2149,7 +2174,7 @@ $('privBtn').addEventListener('click', () => {   // 0.65.1: the privacy policy o
   const b = $('privBtn'), open = $('priv').hidden;
   $('priv').hidden = !open; b.classList.toggle('on', open); b.setAttribute('aria-expanded', String(open));
 });
-const VERSION = '0.67.8', VERSION_DATE = '2026-11-02';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
+const VERSION = '0.67.9', VERSION_DATE = '2026-11-17';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
 $('brand').textContent = `WxTable ${VERSION}`;
 $('aboutName').textContent = `WxTable™ v${VERSION} · ${VERSION_DATE}`;   // ™ on About only (0.65)   // the Rydn format, as DoStack's About
 $('strip').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; save(); showTab(); });
