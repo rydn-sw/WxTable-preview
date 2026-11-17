@@ -11,10 +11,13 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>WxTable 0.67.9</title>
+<title>WxTable 67.10</title>
 <link rel="icon" type="image/png" sizes="32x32" href="WxTable_favicon_32_v01.png">
 <style>
-/* WxTable 0.67.9 (2026-11-17): when Open-Meteo's main address does not answer within 6 seconds, the forecast and the
+/* WxTable 0.67.10 (2026-11-17): messages say what did not work: "No network: this device is offline"; which service, and
+   how; whether the connection works; what is shown instead, with its time and age (JG: "Error messages must include "No
+   network" and other explanations of what is not working").
+   0.67.9 (2026-11-17): when Open-Meteo's main address does not answer within 6 seconds, the forecast and the
    model-run times come from its backup address, previous-runs-api.open-meteo.com, and the message under the table says so
    (open-meteo/open-meteo#2329: the US West server often does not answer; JG: "I need the app immediately, and there is no
    new forecast. Not good.").
@@ -689,6 +692,29 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
 // our forecast is wrong, WU is closer": Open-Meteo's daily values run midnight to midnight, so 5 AM rain showed all day.)
 // An hour row is [time, temp, chance, gust, amount, weather code, cloud cover]; a copy made before 0.67.6 has no code or cover,
 // and its daily code is kept.
+// 0.67.10: what did not work, in words (JG: "Error messages must include "No network" and other explanations of what is
+// not working"). e is what a request threw: an AbortError (our time limit), a TypeError (no connection to the server: the
+// browser does not say why), or an error carrying the HTTP status.
+window.WXWHY = {
+  offline: () => navigator.onLine === false,   // reliable when false; "online" can be wrong
+  say(svc, e) {
+    if (navigator.onLine === false) return 'No network: this device is offline';
+    if (e && e.name === 'AbortError') return `${svc} did not answer in time`;
+    const st = e && e.status;
+    if (st === 429) return `${svc} is busy (too many requests); try again in a minute`;
+    if (st >= 500) return `${svc} had a server error (code ${st}); this is on their side`;
+    if (st) return `${svc} refused the request (code ${st})`;
+    // a failed connection: Chrome "Failed to fetch", Safari "Load failed", Firefox "NetworkError ..." (review: a TypeError
+    // from a bug in the page is not a network failure, so it is shown as it is)
+    if (e instanceof TypeError && /fetch|load failed|network/i.test(e.message)) return `${svc} could not be reached`;
+    return `${svc}: ${(e && e.message) || 'an incomplete answer'}`;
+  },
+  age(ms) {   // "40 minutes old", "3 hours old", "15 days old"
+    if (!Number.isFinite(ms)) return 'age unknown';   // review
+    const m =Math.max(0, Math.round((Date.now() - ms) / 60000)), u = (n, w) => `${n} ${w}${n === 1 ? '' : 's'} old`;
+    return m < 60 ? u(m, 'minute') : m < 2880 ? u(Math.round(m / 60), 'hour') : u(Math.round(m / 1440), 'day');
+  },
+};
 window.WXDAY = {
   rows(days, hours, now, today) {   // now: the place's hour as 'YYYY-MM-DDTHH:00', or null (every day its whole daytime);
     // today: the table's today (the device's date); days before it are past and keep the whole day (review of 0.67.6)
@@ -795,7 +821,7 @@ window.WXDAY = {
       hours: d.hourly.time.map((t, i) => [t, rnd(d.hourly.temperature_2m[i]), d.hourly.precipitation_probability[i], rnd(d.hourly.wind_gusts_10m[i]), rnd(d.hourly.precipitation[i], 2),
         d.hourly.weather_code ? d.hourly.weather_code[i] : null, d.hourly.cloud_cover ? d.hourly.cloud_cover[i] : null]) }));
     const n = BUNDLED.places.length;
-    if (backup) notes.push('Forecast from Open-Meteo\'s backup address: its main server did not answer');
+    if (backup) notes.push('Forecast from Open-Meteo\'s backup address: its main server did not answer.');
     window.WXT = { fetched, source: backup ? 'Open-Meteo (backup address)' : 'Open-Meteo', pastDays: 7, live: true,
       places: places.slice(0, n).map((p, i) => ({ name: p.name, note: p.note, lat: p.lat, lon: p.lon, tz: D[i].tz, elevFt: D[i].elevFt, days: D[i].days, hours: D[i].hours })) };
     added.forEach((x, j) => { const d = D[n + j]; x.wx = { fetched: new Date(now).toISOString(), offset: d.offset, tz: d.tz, elevFt: d.elevFt, days: d.days, hours: d.hours }; });
@@ -805,28 +831,35 @@ window.WXDAY = {
     L.cur = slim; L.last = { wxt: window.WXT };
     if (!write(LIVE, L)) { delete L.last; write(LIVE, L); }   // too big to keep: keep the arrows' copies only
   } else {
-    const why = F instanceof Error ? (F.name === 'AbortError' ? 'no answer in 10 seconds' : F.message) : 'an incomplete answer';
-    if (L.last && L.last.wxt) { window.WXT = Object.assign({}, L.last.wxt, { live: false }); notes.push(`No new forecast (${why}): showing the forecast from ${when(Date.parse(L.last.wxt.fetched))}`); }
-    else notes.push(`No new forecast (${why}): showing a saved copy from ${when(Date.parse(BUNDLED.fetched))}`);
+    // what did not work, in words (0.67.10): offline; nothing answered; or only the forecast service, and how
+    const other = A.some(a => a.status === 'fulfilled') || R.some(r => r.status === 'fulfilled') || !!(F && F.status);   // an error code is an answer (review)
+    const head = WXWHY.offline() ? 'No network: this device is offline'
+      : !(F instanceof Error) ? 'Forecast not updated: Open-Meteo gave an incomplete answer'
+      : other ? `Forecast not updated: ${WXWHY.say('Open-Meteo', F)}. Your connection is working`
+      : 'No network reply: none of the weather services answered. Check Wi-Fi or cell signal';
+    const last = L.last && L.last.wxt, from = Date.parse(last ? last.fetched : BUNDLED.fetched);
+    if (last) window.WXT = Object.assign({}, last, { live: false });
+    notes.push(`${head}. Showing ${last ? 'the forecast' : 'a saved copy'} from ${when(from)} (${WXWHY.age(from)}).`);
   }
   window.WXP = L.prev || { fetched: null, places: [] };
 
   // a place whose check failed keeps its last known alerts, so a warning does not vanish with a slow answer
   const ok = A.filter(a => a.status === 'fulfilled').length, known = L.alerts || {}, n = BUNDLED.places.length;
+  const aFail = A.find(a => a.status === 'rejected'), aWhy = aFail && !WXWHY.offline() ? ` (${WXWHY.say('the Weather Service', aFail.reason)})` : '';   // offline is said once, above
   places.forEach((p, i) => { if (A[i].status === 'fulfilled') known[p.name] = A[i].value; });
   if (ok) { L.alerts = known; L.alertsAt = fetched; write(LIVE, L); }
   if (ok || L.alertsAt) {
     window.WXA = { fetched: ok ? fetched : L.alertsAt, source: 'National Weather Service', places: places.slice(0, n).map(p => ({ name: p.name, alerts: known[p.name] || [] })) };
     added.forEach((x, j) => { if (A[n + j].status === 'fulfilled') x.alerts = A[n + j].value; });
-    if (!ok) notes.push('Alerts could not be checked: showing the last known alerts, from ' + when(Date.parse(L.alertsAt)));
-    else if (ok < places.length) notes.push(`Alerts could not be checked for ${places.length - ok} of ${places.length} places: showing their last known alerts`);
-  } else notes.push('Alerts could not be checked: showing a saved copy from ' + when(Date.parse(window.WXA.fetched)));
+    if (!ok) notes.push(`Weather Service alerts not checked${aWhy}. Showing the last known alerts, from ${when(Date.parse(L.alertsAt))} (${WXWHY.age(Date.parse(L.alertsAt))}).`);
+    else if (ok < places.length) notes.push(`Weather Service alerts not checked for ${places.length - ok} of ${places.length} places${aWhy}. Showing their last known alerts.`);
+  } else notes.push(`Weather Service alerts not checked${aWhy}. Showing a saved copy from ${when(Date.parse(window.WXA.fetched))} (${WXWHY.age(Date.parse(window.WXA.fetched))}).`);
   if (R.every(r => r.status === 'fulfilled'))
     window.WXR = { fetched, source: 'Open-Meteo model metadata', models: Object.fromEntries(MODELS.map(([k, name], i) => { const m = R[i].value;
       return [name, { key: k, init: m.last_run_initialisation_time, avail: m.last_run_availability_time, modified: m.last_run_modification_time, every: m.update_interval_seconds, end: m.data_end_time }]; })) };
   if (added.length) write(KEY, S);   // the added places' new forecasts, before the main script reads the settings
-  say(notes.join('. '), notes.length > 0);
-  } catch (e) { say('Could not get the latest forecast (' + e.message + '): showing what this device has', true); }
+  say(notes.join(' '), notes.length > 0);   // each note a sentence (0.67.10)
+  } catch (e) { say((WXWHY.offline() ? 'No network: this device is offline. ' : '') + 'Could not get the latest forecast (' + e.message + '). Showing what this device has.', true); }
   finally { start(); }
 })();
 </script>
@@ -1431,7 +1464,7 @@ function offer(loc) {
 $('acancel').addEventListener('click', () => { pending = null; $('addrow').hidden = true; });
 const offStr = s => `${s < 0 ? '-' : '+'}${pad(Math.floor(Math.abs(s) / 3600))}:${pad(Math.floor(Math.abs(s) % 3600 / 60))}`;
 const rnd = (v, n) => v == null ? null : n ? Math.round(v * 10 ** n) / 10 ** n : Math.round(v);
-async function getJson(url, opts) { const r = await fetch(url, opts); if (r.status === 429) throw new Error('Open-Meteo is busy (too many requests); try again in a minute'); if (!r.ok) throw Object.assign(new Error('the server answered ' + r.status), { status: r.status }); return r.json(); }
+async function getJson(url, opts) { const r = await fetch(url, opts); if (r.status === 429) throw Object.assign(new Error('the service is busy (too many requests)'), { status: 429 }); if (!r.ok) throw Object.assign(new Error('the server answered ' + r.status), { status: r.status }); return r.json(); }
 async function omJson(path) {   // Open-Meteo's main address, 6 seconds at most, then its backup, 15 seconds at most (0.67.9)
   const within = async (url, ms) => { const ac = new AbortController(), t = setTimeout(() => ac.abort(), ms);
     try { return await getJson(url, { signal: ac.signal }); } finally { clearTimeout(t); } };
@@ -1476,14 +1509,14 @@ $('aadd').addEventListener('click', async () => {
     const x = { name, on: true, lat: loc.lat, lon: loc.lon, note: loc.note || '', wx };
     const notes = [];
     try { x.alerts = await fetchAlerts(loc.lat, loc.lon); }
-    catch (e) { if (e.status === 400) { x.alerts = []; x.noAlerts = true; } else notes.push('alerts not fetched (' + e.message + ')'); }   // 400: outside the US
-    try { x.clim = await fetchClimate(loc.lat, loc.lon); } catch (e) { notes.push('climate not fetched (' + e.message + ')'); }
+    catch (e) { if (e.status === 400) { x.alerts = []; x.noAlerts = true; } else notes.push('alerts not checked (' + WXWHY.say('the Weather Service', e) + ')'); }   // 400: outside the US
+    try { x.clim = await fetchClimate(loc.lat, loc.lon); } catch (e) { notes.push('climate not fetched (' + WXWHY.say('Open-Meteo', e) + ')'); }
     S.places.push(x); save(); joinAdded();
     pending = null; $('addrow').hidden = true; busy(btn, 'Add', false); btn.disabled = false;
     drawLocs(); drawTable(); drawClim();
     // nothing to say when it worked (JG: "Remove this: Added GPS spot ..."); only what did not work
     $('pmsg').textContent = notes.length ? `${name}: ` + notes.join('; ') + '.' : '';
-  } catch (e) { busy(btn, 'Add', false); btn.disabled = false; $('pmsg').textContent = `Could not add ${name}: ${e.message}.`; }
+  } catch (e) { busy(btn, 'Add', false); btn.disabled = false; $('pmsg').textContent = `Could not add ${name}: ${WXWHY.say('Open-Meteo', e)}.`; }
 });
 
 // saved sets of locations: a name and a description; the date and time are recorded automatically
@@ -1522,6 +1555,8 @@ function linkPlace(x) {   // a place as a link carries it: name, position, note,
 function linkError(r, j) {
   if (r && r.status === 429) return j && j.error === 'all' ? 'too many links were made today. Try again tomorrow.' : `${(j && j.limit) || 20} links have been sent from here today. Try again tomorrow.`;
   if (r && (r.status === 400 || r.status === 413)) return 'the link service could not read it.';
+  if (WXWHY.offline()) return 'No network: this device is offline. Try again when it is connected.';
+  if (r && r.status >= 500) return `the link service had a server error (code ${r.status}); this is on their side. Try again later.`;
   return 'no answer from the link service. Check the connection and try again.';
 }
 const sendable = list => (list || []).filter(x => !x.del && x.on).map(linkPlace);   // only the checked places go in a link (0.67; JG: "only the CHECKED locations should be included in the link that is sent")
@@ -1572,7 +1607,7 @@ async function loadPlaces(list, show) {
       x.wx = await fetchForecast(x.lat, x.lon);
       try { x.alerts = await fetchAlerts(x.lat, x.lon); } catch (e) { if (e.status === 400) { x.alerts = []; x.noAlerts = true; } }
       out.push(x);
-    } catch (e) { bad.push(`${x.name} (${e.message})`); }
+    } catch (e) { bad.push(`${x.name} (${WXWHY.say('Open-Meteo', e)})`); }
   }
   return { out, bad };
 }
@@ -1654,7 +1689,8 @@ async function openLinkCode(code) {
     const r = await linkFetch(LINKS + '/links/' + code); answered = true;
     if (r.ok) { const j = await r.json(); got = j && WXCHECK.payload({ v: 1, kind: j.kind, data: j.data }); }   // review: only these two fields
   } catch (e) { got = null; }
-  if (!got && !answered) { linkSay('This link could not be opened: no answer from the link service. Reload the page to try again.', true); return; }   // the code stays in the address for the reload (review)
+  if (!got && !answered) { linkSay(WXWHY.offline() ? 'This link could not be opened: No network: this device is offline. Reload the page when it is connected.'
+    : 'This link could not be opened: no answer from the link service. Reload the page to try again.', true); return; }   // the code stays in the address for the reload (review)
   try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* the code stays in the address */ }
   if (!got) { linkSay('This link could not be opened: it may have expired (links last a year after last use).', true); return; }
   if (!firstVisit) { linkSay(''); inbox = got; S.tab = 'locs'; drawInbox(); showTab(); return; }
@@ -1692,7 +1728,7 @@ async function search() {
     $('hits').onclick = e => { const b = e.target.closest('[data-h]'); if (!b) return; const h = hits[+b.dataset.h];
       const ab = h.country_code === 'US' ? Object.keys(STATES).find(k => STATES[k] === h.admin1) || h.admin1 || '' : h.country || h.admin1 || '';
       offer({ name: h.name, lat: h.latitude, lon: h.longitude, note: ab, src: `search (${h.name}, ${h.admin1 || ''})` }); $('hits').innerHTML = ''; $('q').value = ''; };
-  } catch (e) { if (seq === qSeq) $('hits').innerHTML = '<div class="sec">Search needs a connection; none now.</div>'; }
+  } catch (e) { if (seq === qSeq) $('hits').innerHTML = `<div class="sec">Search did not work: ${esc(WXWHY.say('Open-Meteo\'s place search', e))}.</div>`; }
 }
 // paste a position: decimal pair, N/S/E/W, degrees-minutes-seconds, or a Google Maps link
 function parsePos(s) {
@@ -1899,7 +1935,7 @@ async function qpeLoad() {
   try {
     if (!qpeT || !qpeT.day) qpeT = await qpeTimes().catch(() => ({}));   // asked again next time if it failed
     await Promise.all(chosen().filter(p => !QPEC[p.name] && p.lat != null).map(async p => {
-      try { QPEC[p.name] = { v: await qpeOne(p) }; } catch (e) { QPEC[p.name] = { err: e.message }; } }));
+      try { QPEC[p.name] = { v: await qpeOne(p) }; } catch (e) { QPEC[p.name] = { err: WXWHY.say('the Weather Service precipitation maps', e) }; } }));
   } finally { qpeBusy = false; }
   drawPrecip();
 }
@@ -1920,7 +1956,7 @@ function drawPrecip() {
     const c = QPEC[p.name], d = here ? ` <span class="sec"><span class="arrow" style="display:inline-block;transform:rotate(${Math.round(bearing(here, p))}deg)">▲</span> ${Math.round(miles(here, p))} mi</span>` : '';
     h += `<div><b>${esc(p.name)}</b>${d}</div>`;
     if (!c) { h += `<div class="sec" style="grid-column:span 10">${p.lat == null ? 'No position for this place, so nothing to measure.' : 'Fetching…'}</div>`; return; }
-    if (c.err) { h += `<div class="sec" style="grid-column:span 10">Could not fetch: ${esc(c.err)}</div>`; return; }
+    if (c.err) { h += `<div class="sec" style="grid-column:span 10">Could not fetch: ${esc(c.err)}. Tried again when this tab opens.</div>`; return; }
     const v = c.v, w7 = v[QPE_DAYS[6]], now = v[QPE_NOW];
     if (w7 == null) { h += '<div class="sec" style="grid-column:span 10">No measured data here: the Weather Service covers the lower 48 states, Alaska and Puerto Rico.</div>'; return; }
     // Alaska and Puerto Rico have the day totals but no today so far (checked 2026-11-01): the total is then to 5 AM
@@ -2174,9 +2210,10 @@ $('privBtn').addEventListener('click', () => {   // 0.65.1: the privacy policy o
   const b = $('privBtn'), open = $('priv').hidden;
   $('priv').hidden = !open; b.classList.toggle('on', open); b.setAttribute('aria-expanded', String(open));
 });
-const VERSION = '0.67.9', VERSION_DATE = '2026-11-17';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
-$('brand').textContent = `WxTable ${VERSION}`;
-$('aboutName').textContent = `WxTable™ v${VERSION} · ${VERSION_DATE}`;   // ™ on About only (0.65)   // the Rydn format, as DoStack's About
+const VERSION = '0.67.10', VERSION_DATE = '2026-11-17';   // shown at the top left and in About (JG: "Add WxTable and the version at the top left")
+const SHOWN = VERSION.replace(/^0\./, '');   // shown without the leading "0." (JG, 2026-11-17: "Where the version is shown to the user, make it 67.10")
+$('brand').textContent = `WxTable ${SHOWN}`;
+$('aboutName').textContent = `WxTable™ v${SHOWN} · ${VERSION_DATE}`;   // ™ on About only (0.65)   // the Rydn format, as DoStack's About
 $('strip').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; save(); showTab(); });
 $('layout').addEventListener('change', () => { S.layout = $('layout').value; save(); fillAhead(); refresh(); showTab(); });
 $('ndays').addEventListener('change', () => { S.ahead = $('ndays').value; save(); refresh(); showTab(); });
