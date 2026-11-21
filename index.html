@@ -2,8 +2,12 @@
 <html lang="en"><head><meta charset="utf-8">
 <script>
 (function () {
-  var w = window;
-  if (typeof w.globalThis === 'undefined') w.globalThis = w;
+  var w = window, added = w.WXFILLED = [];   // the features added for this browser, shown in About (v02)
+  if (typeof w.globalThis === 'undefined') { w.globalThis = w; added.push('globalThis'); }
+  if (!Object.fromEntries) added.push('Object.fromEntries');
+  if (!Promise.allSettled) added.push('Promise.allSettled');
+  if (!String.prototype.matchAll) added.push('String.matchAll');
+  if (!w.AbortController && w.fetch) added.push('AbortController');
   if (!Object.fromEntries) Object.fromEntries = function (it) { var o = {}; Array.from(it).forEach(function (p) { o[p[0]] = p[1]; }); return o; };
   if (!Promise.allSettled) Promise.allSettled = function (a) {
     return Promise.all(Array.from(a).map(function (p) { return Promise.resolve(p).then(
@@ -39,7 +43,14 @@
     var put = function () {
       var d = document.createElement('div');
       d.style.cssText = 'margin:12px;padding:12px;border:2px solid #f5c400;color:#fff;background:#000;font:16px sans-serif';
-      d.textContent = 'WxTable could not start in this browser. It may be too old for WxTable. Updating the browser, or opening WxTable on a newer device, should fix it.';
+      var ua = navigator.userAgent, b = null, a = ua.match(/(Android|iPhone OS|CPU OS|Windows NT|Mac OS X) ([\d._]+)/);
+      // in this order, so Android's built-in WebView ("Version/4.0 ... Chrome/50") is Chrome (v03, review)
+      var order = [['SamsungBrowser', 'Samsung Internet'], ['EdgA', 'Edge'], ['Edg', 'Edge'], ['Edge', 'Edge'], ['OPR', 'Opera'], ['CriOS', 'Chrome'],
+        ['FxiOS', 'Firefox'], ['Firefox', 'Firefox'], ['Chrome', 'Chrome'], ['Version', 'Safari']];
+      for (var i = 0; i < order.length && !b; i++) { var r = ua.match(new RegExp(order[i][0] + '/(\\d+)')); if (r) b = order[i][1] + ' ' + r[1]; }
+      var names = { 'iPhone OS': 'iOS', 'CPU OS': 'iPadOS', 'Windows NT': 'Windows NT', 'Mac OS X': 'macOS' };
+      var found = (b || 'an unknown browser') + (a ? ' on ' + (names[a[1]] || a[1]) + ' ' + a[2].replace(/_/g, '.') : '');
+      d.textContent = 'WxTable could not start in this browser (' + found + '). It may be too old for WxTable. Updating the browser, or opening WxTable on a newer device, should fix it.';
       document.body.insertBefore(d, document.body.firstChild);
     };
     if (document.body) put(); else document.addEventListener('DOMContentLoaded', put);
@@ -60,10 +71,19 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>WxTable 67.11</title>
+<title>WxTable 67.14</title>
 <link rel="icon" type="image/png" sizes="32x32" href="WxTable_favicon_32_v01.png">
+<link rel="manifest" href="WxTable_manifest_v01.webmanifest">   <!-- 0.67.13: installed to the Home screen, it opens full screen -->
+<meta name="theme-color" content="#000000">
 <style>
-/* WxTable 0.67.11 (2026-11-21): older browsers (Chrome 63): the hour now at a place on a 24-hour clock there too; a
+/* WxTable 0.67.14 (2026-11-21): "How to set up in kiosk mode" at the bottom of Options (JG: "Under Options, add
+   explanation at the bottom: How to set up in kiosk mode").
+   0.67.13 (2026-11-21): full screen: a web app manifest (opens without the browser's bars once installed to
+   the Home screen) and "Full screen" beside Manual Refresh (JG: "Can we put FF into a full screen kiosk-like layout?").
+   0.67.12 (2026-11-21): device information for older devices: the model, the features added, the clock, the
+   certificates; a device that does not trust the services' certificates is told so, with the way round it (JG: "For
+   older devices, I would like to include as much info about the device as we can for the user").
+   0.67.11 (2026-11-21): older browsers (Chrome 63): the hour now at a place on a 24-hour clock there too; a
    time in a place's zone keeps its AM or PM (JG: "I am trying the web on an old tablet: the headings show up but nothing
    else"). The published copy is converted for them by tools/legacy_v01.mjs.
    0.67.10 (2026-11-17): messages say what did not work: "No network: this device is offline"; which service, and
@@ -427,6 +447,8 @@ a { color:var(--lo); }
 .pane h2:first-child { margin-top:4px; }
 .sec { color:var(--sec); font-size:12px; }
 .sec:empty { display:none; }
+.kiosk { max-width:640px; margin:6px 0 8px; padding-left:22px; }   /* Options: kiosk mode steps (0.67.14) */
+.kiosk li { margin:4px 0; }
 /* About: This device */
 .dev { display:grid; grid-template-columns:max-content minmax(0, 1fr); grid-gap:3px 12px;gap:3px 12px; font-size:13px; max-width:640px; }
 .dev .k { color:var(--sec); }
@@ -622,7 +644,7 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
   <div class="sec" id="smsg"></div>
 </div>
 
-<div id="pTable"><div class="from" id="fromlink" hidden><span>From a link: <b id="fromname"></b></span><button id="fromclose">Close</button></div><div class="ftrow" id="ftrow"><div class="ft" id="ft"></div><a href="#" class="refresh" id="refresh">Manual Refresh</a></div><div class="tw" id="tw"><div class="t" id="t"></div></div></div>
+<div id="pTable"><div class="from" id="fromlink" hidden><span>From a link: <b id="fromname"></b></span><button id="fromclose">Close</button></div><div class="ftrow" id="ftrow"><div class="ft" id="ft"></div><a href="#" class="refresh" id="refresh">Manual Refresh</a><a href="#" class="refresh" id="fullscr" hidden>Full screen</a></div><div class="tw" id="tw"><div class="t" id="t"></div></div></div>
 
 <div id="pExpl" class="pane" hidden>
   <div class="preview" id="xpreview"></div>
@@ -675,6 +697,18 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
   <div class="sec" id="stamp"></div>
   <div class="sec" id="all"></div>
   </div>
+  <h2>How to set up in kiosk mode</h2>   <!-- 0.67.14 (JG: "Under Options, add explanation at the bottom: How to set up in kiosk mode") -->
+  <div class="sec" style="max-width:640px">WxTable filling the screen and kept there, for a tablet or phone on a wall, a desk or a dashboard.</div>
+  <ol class="kiosk">
+    <li><b>Install WxTable.</b> Open WxTable in Firefox or Chrome, open the browser's menu, and choose <b>Install</b> (or <b>Add to Home screen</b>).</li>
+    <li><b>Open it from the Home screen.</b> Tap the WxTable icon. It fills the screen, without the browser's address bar.</li>
+    <li><b>If the menu has no Install,</b> add it to the Home screen anyway, and tap <b>Full screen</b> on the forecast line each time you open it.</li>
+    <li><b>Keep it on screen.</b> In the device's Settings, turn on <b>App pinning</b> (called <b>Screen pinning</b> on older Android; usually under Security). Then pin WxTable from the recent-apps screen. To unpin, the device can ask for your PIN.</li>
+    <li><b>Keep it fresh.</b> Leave Auto refresh on (above), and the device on its charger.</li>
+  </ol>
+  <div class="sec" style="max-width:640px">Menu names differ between devices and versions. The browser's and Android's own instructions:
+    <a href="https://support.mozilla.org/kb/use-web-apps-firefox-android" target="_blank" rel="noopener">Firefox web apps</a>,
+    <a href="https://support.google.com/android/answer/9455138" target="_blank" rel="noopener">Android app pinning</a>.</div>
 </div>
 <div id="pAbout" class="pane" hidden>
   <img src="WxTable_icon_512_v01.png" alt="WxTable icon" width="64" height="64" style="display:block;margin-top:12px">   <!-- 0.65.5 -->
@@ -748,8 +782,47 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
     if (st === 429) return `${svc} is busy (too many requests); try again in a minute`;
     if (st >= 500) return `${svc} had a server error (code ${st}); this is on their side`;
     if (st) return `${svc} refused the request (code ${st})`;
-    if (e instanceof TypeError && /fetch|load failed|network/i.test(e.message)) return `${svc} could not be reached`;
+    if (e instanceof TypeError && /fetch|load failed|network/i.test(e.message))
+      return `${svc} could not be reached${this.device().certs === false ? " (this device does not trust its security certificate)" : ""}`;
     return `${svc}: ${e && e.message || "an incomplete answer"}`;
+  },
+  // 0.67.12: what the browser says about the device (JG: "For older devices, I would like to include as much info about
+  // the device as we can for the user"). certs: does it trust the Let's Encrypt certificates every WxTable service uses?
+  // Android before 7.1.1 does not, in a browser that uses Android's own list; Firefox carries its own list; elsewhere not
+  // known from here (null), except that Android 7.1.1 and later does.
+  device() {
+    const ua = navigator.userAgent, a = ua.match(/Android ([\d.]+)/), ff = /Firefox\//.test(ua);
+    const v = a ? a[1].split(".").map(Number) : null, old = !!v && (v[0] < 7 || v[0] === 7 && ((v[1] || 0) < 1 || (v[1] || 0) === 1 && (v[2] || 0) < 1));
+    let model = (ua.match(/Android [\d.]+;(?: [a-z]{2}(?:[-_][a-z]{2})?;)? ([^;)]+?)(?: Build\/[^;)]*)?[;)]/i) || [])[1] || null;
+    if (model && /^(K|wv|Mobile|Tablet)$/i.test(model)) model = null;
+    let browser = null;
+    for (const [k, n] of [
+      ["SamsungBrowser", "Samsung Internet"],
+      ["EdgA", "Edge"],
+      ["Edg", "Edge"],
+      ["Edge", "Edge"],
+      ["OPR", "Opera"],
+      ["CriOS", "Chrome"],
+      ["FxiOS", "Firefox"],
+      ["Firefox", "Firefox"],
+      ["Chrome", "Chrome"],
+      ["Version", "Safari"]
+    ]) {
+      const r = ua.match(new RegExp(k + "/(\\d+)"));
+      if (r) {
+        browser = `${n} ${r[1]}`;
+        break;
+      }
+    }
+    return { android: a ? a[1] : null, model, browser, firefox: ff, certs: !a ? null : ff ? true : !old };
+  },
+  name() {
+    const d = this.device();
+    return [d.model, d.android && "Android " + d.android, d.browser].filter(Boolean).join(", ") || "this browser";
+  },
+  certNote() {
+    const d = this.device(), major = d.android ? parseInt(d.android, 10) : 0;
+    return `this device (${this.name()}) does not trust the security certificates the weather services use, so the browser cannot reach them. ` + (major >= 5 ? "Firefox for Android carries its own list of certificates and works (Firefox 143 is the last version for Android 5 to 7)" : "Firefox for Android carries its own list, but its last version for older Android, 143, needs Android 5 or later");
   },
   age(ms) {
     if (!Number.isFinite(ms)) return "age unknown";
@@ -961,14 +1034,15 @@ window.WXDAY = {
       }
     } else {
       const other = A.some((a) => a.status === "fulfilled") || R.some((r) => r.status === "fulfilled") || !!(F && F.status);
-      const head = WXWHY.offline() ? "No network: this device is offline" : !(F instanceof Error) ? "Forecast not updated: Open-Meteo gave an incomplete answer" : other ? `Forecast not updated: ${WXWHY.say("Open-Meteo", F)}. Your connection is working` : "No network reply: none of the weather services answered. Check Wi-Fi or cell signal";
+      const certBad = WXWHY.device().certs === false && !other && F instanceof TypeError && /fetch|load failed|network/i.test(F.message);
+      const head = WXWHY.offline() ? "No network: this device is offline" : certBad ? "Forecast not updated: " + WXWHY.certNote() : !(F instanceof Error) ? "Forecast not updated: Open-Meteo gave an incomplete answer" : other ? `Forecast not updated: ${WXWHY.say("Open-Meteo", F)}. Your connection is working` : "No network reply: none of the weather services answered. Check Wi-Fi or cell signal";
       const last = L.last && L.last.wxt, from = Date.parse(last ? last.fetched : BUNDLED.fetched);
       if (last) window.WXT = Object.assign({}, last, { live: false });
       notes.push(`${head}. Showing ${last ? "the forecast" : "a saved copy"} from ${when(from)} (${WXWHY.age(from)}).`);
     }
     window.WXP = L.prev || { fetched: null, places: [] };
     const ok = A.filter((a) => a.status === "fulfilled").length, known = L.alerts || {}, n = BUNDLED.places.length;
-    const aFail = A.find((a) => a.status === "rejected"), aWhy = aFail && !WXWHY.offline() ? ` (${WXWHY.say("the Weather Service", aFail.reason)})` : "";
+    const aFail = A.find((a) => a.status === "rejected"), aWhy = aFail && !WXWHY.offline() && !(WXWHY.device().certs === false && aFail.reason instanceof TypeError) ? ` (${WXWHY.say("the Weather Service", aFail.reason)})` : "";
     places.forEach((p, i) => {
       if (A[i].status === "fulfilled") known[p.name] = A[i].value;
     });
@@ -1552,10 +1626,14 @@ function drawFt() {
   if (S.ftPos !== "top") S.ftPos = "bottom";
   $("pTable").classList.toggle("ftbottom", S.ftPos === "bottom");
   $("ftrow").appendChild($("refresh"));
+  $("ftrow").appendChild($("fullscr"));
   const h = ftHtml(S.ft), i = h.indexOf("</span></span>") + 14, off = S.auto === "off";
   const tip = esc(off ? "Off: only when you press Manual Refresh or open the page. Set under Options." : "While the page is on screen: Weather Service alerts checked every 10 minutes; a new forecast at most every 3 hours. Set under Options.");
   $("ft").innerHTML = i < 14 ? h : h.slice(0, i) + `<span class="ftctl" id="ftctl"><span title="${tip}">Auto refresh: <b>${off ? "Off" : "Alerts 10 min, forecast 3 h"}</b></span></span>` + h.slice(i);
-  if ($("ftctl")) $("ftctl").appendChild($("refresh"));
+  if ($("ftctl")) {
+    $("ftctl").appendChild($("refresh"));
+    $("ftctl").appendChild($("fullscr"));
+  }
 }
 function ftSample(k) {
   if (k !== "4") return `<div class="ftl${S.ft === k ? " on" : ""}">${ftHtml(k)}</div>`;
@@ -1710,6 +1788,32 @@ document.addEventListener("visibilitychange", () => {
     alertCheck();
   }
 });
+const FS = {
+  el: () => document.fullscreenElement || document.webkitFullscreenElement || null,
+  can: () => {
+    const d = document.documentElement;
+    return !!(d.requestFullscreen || d.webkitRequestFullscreen);
+  },
+  app: () => matchMedia("(display-mode: fullscreen)").matches || matchMedia("(display-mode: standalone)").matches || navigator.standalone === true
+};
+function fullscrShow() {
+  const a = $("fullscr");
+  if (!a) return;
+  a.hidden = !FS.can() || FS.app() && !FS.el();
+  a.textContent = FS.el() ? "Exit full screen" : "Full screen";
+}
+$("fullscr").addEventListener("click", (e) => {
+  e.preventDefault();
+  const d = document.documentElement;
+  try {
+    const p = FS.el() ? (document.exitFullscreen || document.webkitExitFullscreen).call(document) : (d.requestFullscreen || d.webkitRequestFullscreen).call(d);
+    if (p && p.catch) p.catch(() => fullscrShow());
+  } catch (err) {
+    fullscrShow();
+  }
+});
+["fullscreenchange", "webkitfullscreenchange"].forEach((ev) => document.addEventListener(ev, fullscrShow));
+fullscrShow();
 $("refresh").addEventListener("click", (e) => {
   e.preventDefault();
   setTimeout(() => location.reload(), 150);
@@ -3119,6 +3223,7 @@ $("key").addEventListener("change", (e) => {
   refresh();
 });
 const TV_RE = /SmartTV|SMART-TV|Tizen|Web0S|webOS|NetCast|BRAVIA|AFT[A-Z]|CrKey|Android TV|GoogleTV|HbbTV|Roku/i;
+let devClock = null;
 let devHints = null, devHintsNo = false;
 function devBrowser(ua) {
   const m = (re, name) => {
@@ -3177,6 +3282,35 @@ function devPic(sw, sh, ww, wh, inset) {
   const band = (bx, by, bw, bh) => bw > 0 && bh > 0 ? `<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" fill="#555"/>` : "";
   return `<svg width="${W2 + 150}" height="${H + 2}" role="img" aria-label="The screen, ${sw} by ${sh}, and the window, ${ww} by ${wh}, to scale"><rect x="1" y="1" width="${W2}" height="${H}" fill="none" style="stroke:var(--sec)"/><rect x="${x + 1}" y="${y + 1}" width="${w}" height="${h}" fill="#222" style="stroke:var(--lo)"/>` + band(x + 1, y + 1, w, it) + band(x + 1, y + 1 + h - ib, w, ib) + band(x + 1, y + 1, il, h) + band(x + 1 + w - ir, y + 1, ir, h) + `<text x="${W2 + 10}" y="14">Screen ${sw} × ${sh}</text><text x="${W2 + 10}" y="30" style="fill:var(--lo)">Window ${ww} × ${wh}</text><text x="${W2 + 10}" y="46">page pixels</text>${inset.some((n) => n) ? `<text x="${W2 + 10}" y="62">gray: notch, home bar</text>` : ""}</svg>`;
 }
+function devMore() {
+  const d = WXWHY.device(), filled = window.WXFILLED || [];
+  if (devClock === null) {
+    devClock = "asking";
+    fetch(location.pathname + "?clock=" + Date.now(), { method: "HEAD", cache: "no-store" }).then(
+      (r) => {
+        const t = Date.parse(r.headers.get("Date") || "");
+        devClock = t ? Math.round((Date.now() - t) / 6e4) : "none";
+        drawDevice();
+      },
+      () => {
+        devClock = "none";
+        drawDevice();
+      }
+    );
+  }
+  const clock2 = devClock === "asking" ? "Checking against the site" : devClock === "none" ? "Could not be checked against the site" : Math.abs(devClock) > 5 ? `Off by ${devClock} minutes` : "Right (within 5 minutes of the site)";
+  return [
+    ["Model, as the browser says", d.model || "Not reported", d.model ? "" : "Newer browsers and iPhones do not report it"],
+    ["Features WxTable added", filled.length ? `${filled.length}: ${filled.join(", ")}` : "None needed", filled.length ? "This browser is older than WxTable is written for; these were added so it runs" : ""],
+    ["Clock", clock2, typeof devClock === "number" && Math.abs(devClock) > 5 ? "A wrong clock makes secure connections fail" : ""],
+    ["Weather services reached", window.WXT && WXT.live ? "Yes, when the page opened" : "No, when the page opened", window.WXT && WXT.live ? "" : "The message under the table says why"],
+    [
+      "Security certificates",
+      d.certs === false ? "Not trusted" : d.certs ? "Trusted" : "Not known from here",
+      d.certs === false ? WXWHY.certNote().replace(/^this device \([^)]*\) /, "This device ") + "." : d.firefox ? "Firefox carries its own list" : d.certs ? "Android 7.1.1 and later trusts them" : ""
+    ]
+  ];
+}
 function drawDevice() {
   if (!$("dev") || S.tab !== "about") return;
   const ua = navigator.userAgent, mm = (q) => matchMedia(q).matches, yes = (b) => b ? "Yes" : "No";
@@ -3211,6 +3345,8 @@ function drawDevice() {
     ["Language, time zone", `${navigator.language}, ${Intl.DateTimeFormat().resolvedOptions().timeZone || "not reported"}`],
     ["Browser", devBrowser(ua)],
     ["System", sys, sysNote],
+    ...devMore(),
+    // 0.67.12
     ...devHints ? devHintRows(devHints) : [["Detailed answer", navigator.userAgentData ? devHintsNo ? "The browser did not give one" : window.isSecureContext ? "Waiting for the browser" : "Needs a secure (https) address" : "This browser does not give one"]]
   ];
   $("devPic").innerHTML = devPic(sw, sh, ww, wh, inset);
@@ -3250,7 +3386,7 @@ $("privBtn").addEventListener("click", () => {
   b.classList.toggle("on", open);
   b.setAttribute("aria-expanded", String(open));
 });
-const VERSION = "0.67.11", VERSION_DATE = "2026-11-21";
+const VERSION = "0.67.14", VERSION_DATE = "2026-11-21";
 const SHOWN = VERSION.replace(/^0\./, "");
 $("brand").textContent = `WxTable ${SHOWN}`;
 $("aboutName").textContent = `WxTable™ v${SHOWN} · ${VERSION_DATE}`;
