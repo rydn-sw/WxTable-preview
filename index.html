@@ -71,12 +71,37 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>WxTable 67.14</title>
+<title>WxTable 67.15</title>
 <link rel="icon" type="image/png" sizes="32x32" href="WxTable_favicon_32_v01.png">
-<link rel="manifest" href="WxTable_manifest_v01.webmanifest">   <!-- 0.67.13: installed to the Home screen, it opens full screen -->
+<script>(function() {
+  var on = false;
+  try {
+    on = !!(JSON.parse(localStorage.getItem("wxtable_proto_v1") || "null") || {}).kiosk;
+  } catch (e) {
+  }
+  window.WX_KIOSK = function(k) {
+    var l = document.getElementById("wxmanifest");
+    if (k && !l) {
+      l = document.createElement("link");
+      l.id = "wxmanifest";
+      l.rel = "manifest";
+      l.href = "WxTable_manifest_v01.webmanifest";
+      document.head.appendChild(l);
+    }
+    if (!k && l) l.parentNode.removeChild(l);
+  };
+  window.WX_KIOSK(on);
+  window.addEventListener("beforeinstallprompt", function(e) {
+    if (!document.getElementById("wxmanifest")) e.preventDefault();
+  });
+})();
+</script>
 <meta name="theme-color" content="#000000">
 <style>
-/* WxTable 0.67.14 (2026-11-21): "How to set up in kiosk mode" at the bottom of Options (JG: "Under Options, add
+/* WxTable 67.15 (2026-11-22): Auto refresh every 3, 4, 5, 6, 8, 10 or 12 hours, default 6, no Off (JG: "Add 3, 4, 5, 8,
+   10 hrs options. Forecast once per day and manual are useless, so remove them"); the web app manifest only with Kiosk
+   mode on (JG: "A key feature is that no install is ever required"; "If a user wants kiosk, that is fine"; "2 and go").
+   0.67.14 (2026-11-21): "How to set up in kiosk mode" at the bottom of Options (JG: "Under Options, add
    explanation at the bottom: How to set up in kiosk mode").
    0.67.13 (2026-11-21): full screen: a web app manifest (opens without the browser's bars once installed to
    the Home screen) and "Full screen" beside Manual Refresh (JG: "Can we put FF into a full screen kiosk-like layout?").
@@ -698,13 +723,16 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
   <div class="sec" id="all"></div>
   </div>
   <h2>How to set up in kiosk mode</h2>   <!-- 0.67.14 (JG: "Under Options, add explanation at the bottom: How to set up in kiosk mode") -->
-  <div class="sec" style="max-width:640px">WxTable filling the screen and kept there, for a tablet or phone on a wall, a desk or a dashboard.</div>
+  <div class="sec" style="max-width:640px">WxTable filling the screen and kept there, for a tablet or phone on a wall, a desk or a dashboard. WxTable needs no install; only for kiosk mode is it installed.</div>
+  <label class="ck" style="margin:6px 0 2px"><input type="checkbox" id="kiosk">Kiosk mode: let the browser offer to install WxTable</label>   <!-- 67.15 -->
+  <div class="sec" style="max-width:640px">Off (the default): WxTable does not invite the browser to offer an install. Turned off, it takes full effect the next time WxTable opens.</div>
   <ol class="kiosk">
-    <li><b>Install WxTable.</b> Open WxTable in Firefox or Chrome, open the browser's menu, and choose <b>Install</b> (or <b>Add to Home screen</b>).</li>
+    <li><b>Turn on Kiosk mode</b> (just above).</li>
+    <li><b>Install WxTable.</b> Open the browser's menu (Firefox or Chrome), and choose <b>Install</b> (or <b>Add to Home screen</b>).</li>
     <li><b>Open it from the Home screen.</b> Tap the WxTable icon. It fills the screen, without the browser's address bar.</li>
     <li><b>If the menu has no Install,</b> add it to the Home screen anyway, and tap <b>Full screen</b> on the forecast line each time you open it.</li>
     <li><b>Keep it on screen.</b> In the device's Settings, turn on <b>App pinning</b> (called <b>Screen pinning</b> on older Android; usually under Security). Then pin WxTable from the recent-apps screen. To unpin, the device can ask for your PIN.</li>
-    <li><b>Keep it fresh.</b> Leave Auto refresh on (above), and the device on its charger.</li>
+    <li><b>Keep it fresh.</b> Keep the device on its charger. Auto refresh (above) sets how often a new forecast is fetched.</li>
   </ol>
   <div class="sec" style="max-width:640px">Menu names differ between devices and versions. The browser's and Android's own instructions:
     <a href="https://support.mozilla.org/kb/use-web-apps-firefox-android" target="_blank" rel="noopener">Firefox web apps</a>,
@@ -1154,7 +1182,8 @@ setTouch();
 if (TOUCH_MQ.addEventListener) TOUCH_MQ.addEventListener("change", onTouchChange);
 else TOUCH_MQ.addListener(onTouchChange);
 let S = {
-  auto: "run",
+  auto: "6",
+  kiosk: false,
   ftPos: "bottom",
   layout: "EB",
   lines: "g88",
@@ -1189,6 +1218,11 @@ if (!S.rain020) {
   S.rain020 = true;
 }
 delete S.myLoc;
+const AUTO_H = [3, 4, 5, 6, 8, 10, 12];
+const autoFix = () => {
+  S.auto = AUTO_H.indexOf(+S.auto) < 0 ? "6" : String(+S.auto);
+};
+autoFix();
 let saveOk = true;
 function save() {
   try {
@@ -1627,9 +1661,9 @@ function drawFt() {
   $("pTable").classList.toggle("ftbottom", S.ftPos === "bottom");
   $("ftrow").appendChild($("refresh"));
   $("ftrow").appendChild($("fullscr"));
-  const h = ftHtml(S.ft), i = h.indexOf("</span></span>") + 14, off = S.auto === "off";
-  const tip = esc(off ? "Off: only when you press Manual Refresh or open the page. Set under Options." : "While the page is on screen: Weather Service alerts checked every 10 minutes; a new forecast at most every 3 hours. Set under Options.");
-  $("ft").innerHTML = i < 14 ? h : h.slice(0, i) + `<span class="ftctl" id="ftctl"><span title="${tip}">Auto refresh: <b>${off ? "Off" : "Alerts 10 min, forecast 3 h"}</b></span></span>` + h.slice(i);
+  const h = ftHtml(S.ft), i = h.indexOf("</span></span>") + 14;
+  const tip = esc(`While the page is on screen: Weather Service alerts checked every 10 minutes; a new forecast at most every ${S.auto} hours. Set under Options.`);
+  $("ft").innerHTML = i < 14 ? h : h.slice(0, i) + `<span class="ftctl" id="ftctl"><span title="${tip}">Auto refresh: <b>Alerts 10 min, forecast ${S.auto} h</b></span></span>` + h.slice(i);
   if ($("ftctl")) {
     $("ftctl").appendChild($("refresh"));
     $("ftctl").appendChild($("fullscr"));
@@ -1699,7 +1733,7 @@ function goDay(d) {
   }, 800);
   tw.scrollTo({ left: dayTarget * step, behavior: "smooth" });
 }
-const AUTO_LATE = 5 * 6e4, FCST_EVERY = 3 * 36e5, ALERT_EVERY = 10 * 6e4, LOADED = performance.timeOrigin || Date.now();
+const AUTO_LATE = 5 * 6e4, ALERT_EVERY = 10 * 6e4, LOADED = performance.timeOrigin || Date.now();
 const ALERT_KEEP = ["event", "severity", "urgency", "certainty", "onset", "effective", "ends", "expires", "headline", "senderName", "areaDesc"];
 let autoT = null, alertT = null, alertsAt = LOADED, alertBusy = false, alertDrawT = null;
 const busyTyping = () => {
@@ -1710,8 +1744,8 @@ function autoCheck() {
   clearTimeout(autoT);
   autoT = null;
   const R = ftRuns();
-  if (S.auto !== "run" || !R.length) return;
-  const from = LOADED + FCST_EVERY;
+  if (!R.length) return;
+  const from = LOADED + S.auto * 36e5;
   const next = Math.min(...R.map((r) => r.due >= from ? r.due : r.due + Math.ceil((from - r.due) / r.every) * r.every));
   const wait = next + AUTO_LATE - Date.now();
   if (wait > 0) {
@@ -1728,7 +1762,7 @@ function autoCheck() {
 async function alertCheck() {
   clearTimeout(alertT);
   alertT = null;
-  if (S.auto !== "run" || alertBusy) return;
+  if (alertBusy) return;
   const wait = alertsAt + ALERT_EVERY - Date.now();
   if (wait > 0) {
     alertT = setTimeout(alertCheck, wait);
@@ -1814,6 +1848,12 @@ $("fullscr").addEventListener("click", (e) => {
 });
 ["fullscreenchange", "webkitfullscreenchange"].forEach((ev) => document.addEventListener(ev, fullscrShow));
 fullscrShow();
+$("kiosk").checked = !!S.kiosk;
+$("kiosk").addEventListener("change", (e) => {
+  S.kiosk = e.target.checked;
+  save();
+  if (window.WX_KIOSK) window.WX_KIOSK(S.kiosk);
+});
 $("refresh").addEventListener("click", (e) => {
   e.preventDefault();
   setTimeout(() => location.reload(), 150);
@@ -2391,6 +2431,7 @@ function applyProfile(set, places) {
   PROFILE_KEYS.forEach((k) => {
     if (k !== "places" && set[k] !== void 0) S[k] = JSON.parse(JSON.stringify(set[k]));
   });
+  autoFix();
   if (places) S.places = mergePlaces(places);
   save();
   joinAdded();
@@ -2989,7 +3030,8 @@ function drawSets() {
     ["Days ahead", sel("oahead", AHEAD, String(ahead())), `<span class="sec">${ahead()} days from today; past days to the left</span>`],
     ["Forecast time", sel("ftsel", Object.entries(FT_STYLES).map(([k, v]) => ({ k, name: `${k} ${v}` })), S.ft), '<span class="sec">Under or over the table: when the forecast was made, and when the next one is due. All five below; yellow outline = in use</span>'],
     ["Forecast time at", sel("ftpos", [{ k: "bottom", name: "Bottom of the table" }, { k: "top", name: "Top of the table" }], S.ftPos), '<span class="sec">Where the forecast time line goes, with the day arrows when they are there (style 4 is inside the table).</span>'],
-    ["Auto refresh", sel("auto", [{ k: "run", name: "Alerts 10 min, forecast 3 h" }, { k: "off", name: "Off" }], S.auto === "off" ? "off" : "run"), '<span class="sec">While the page is on screen: Weather Service alerts checked every 10 minutes; a new forecast at most every 3 hours, a few minutes after a model run is expected (the times on the forecast line), not while you type or choose. Off: only when you press Manual Refresh or open the page. The update frequency is fixed; if you need it changed, email <a href="mailto:support@rydnsoftware.com">support@rydnsoftware.com</a>.</span>'],
+    ["Auto refresh", sel("auto", AUTO_H.map((n) => ({ k: String(n), name: `Forecast every ${n} hours${n === 6 ? " (default)" : ""}` })), S.auto), `<span class="sec">While the page is on screen: a new forecast at most every ${S.auto} hours, a few minutes after a model run is expected (the times on the forecast line), not while you type or choose; Weather Service alerts checked every 10 minutes. Manual Refresh fetches at once. Fewer forecasts ask less of Open-Meteo, a free service.</span>`],
+    // 67.15
     ...Object.entries(FT_STYLES).map(([k, v]) => [`${k} ${v}`, "<span></span>", ftSample(k)]),
     ["Times in", sel("tzsel", [{ k: "device", name: "Your device's time zone" }, { k: "place", name: "Each place's own time zone" }], S.tz === "place" ? "place" : "device"), `<span class="sec">Each place's own: watch, warning and advisory times in that place's time zone. Times that belong to no one place (when the forecast was made, 7 Day Precip's days) stay in your device's zone. The day and night halves in the table are always each place's own 6 AM to 6 PM.</span>`],
     ["Units", `<span>${unitsCtl()}</span>`, `<div class="sample">${sample("80px", sbox(shl(68, 45, "<span></span><span></span>")))}</div>`],
@@ -3386,7 +3428,7 @@ $("privBtn").addEventListener("click", () => {
   b.classList.toggle("on", open);
   b.setAttribute("aria-expanded", String(open));
 });
-const VERSION = "0.67.14", VERSION_DATE = "2026-11-21";
+const VERSION = "0.67.15", VERSION_DATE = "2026-11-22";
 const SHOWN = VERSION.replace(/^0\./, "");
 $("brand").textContent = `WxTable ${SHOWN}`;
 $("aboutName").textContent = `WxTable™ v${SHOWN} · ${VERSION_DATE}`;
