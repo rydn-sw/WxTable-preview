@@ -71,7 +71,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>WxTable 67.15</title>
+<title>WxTable 67.16</title>
 <link rel="icon" type="image/png" sizes="32x32" href="WxTable_favicon_32_v01.png">
 <script>(function() {
   var on = false;
@@ -98,7 +98,10 @@
 </script>
 <meta name="theme-color" content="#000000">
 <style>
-/* WxTable 67.15 (2026-11-22): Auto refresh every 3, 4, 5, 6, 8, 10 or 12 hours, default 6, no Off (JG: "Add 3, 4, 5, 8,
+/* WxTable 67.16 (2026-11-22): a profile sent as a link keeps Auto refresh's hours (wxt_check_v03.js; JG: "2 and 3");
+   no NEW on the 7 Day Precip button (JG: "Turn off the "new" pill in 7 day forecast"); Auto refresh reloads 5 to 10
+   minutes after the expected model run, at random, not all at 5 (JG: "Yes, add it").
+   67.15 (2026-11-22): Auto refresh every 3, 4, 5, 6, 8, 10 or 12 hours, default 6, no Off (JG: "Add 3, 4, 5, 8,
    10 hrs options. Forecast once per day and manual are useless, so remove them"); the web app manifest only with Kiosk
    mode on (JG: "A key feature is that no install is ever required"; "If a user wants kiosk, that is fine"; "2 and go").
    0.67.14 (2026-11-21): "How to set up in kiosk mode" at the bottom of Options (JG: "Under Options, add
@@ -185,7 +188,7 @@
    saved set and beside each saved profile; the link is the page's address with #s= and an 8-character code, the places
    or profile kept behind it by WxTable's link service (wxtable-links, a Cloudflare Worker), cleared after a year unopened.
    Someone who never used WxTable in this browser sees what was sent at once (a profile with a "From a link" line);
-   anyone else is asked first and it is saved to Saved sets or Profiles. Everything from a link passes wxt_check_v02.js,
+   anyone else is asked first and it is saved to Saved sets or Profiles. Everything from a link passes wxt_check_v03.js (v02 until 67.15),
    the same check the link service uses. From the 0.65 draft's review: one Load at a time; a Load replaces the list only
    when every place is ready; a sent place named like a built-in one at another position gets "(sent)". About: the six
    sections of WxTable_About_Mockup_v01.html (trademark sign, Support Rydn, Tell a friend with a QR code, Share on social
@@ -629,7 +632,7 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
   <select id="layout" aria-label="Layout"></select>
   <select id="ndays" aria-label="Days ahead"></select>
   <span class="nav" id="nav"><button id="dprev" aria-label="One day earlier">&#9664;</button><button id="dtoday" hidden>Today</button><button id="dnext" aria-label="One day later">&#9654;</button></span>
-  <button data-tab="precip"><span class="new">NEW</span> 7 Day Precip</button>
+  <button data-tab="precip">7 Day Precip</button>   <!-- 67.16: no NEW (JG: "Turn off the "new" pill in 7 day forecast") -->
   <button data-tab="expl">Explainer</button>
   <button data-tab="fcst">Forecasting</button>
   <button data-tab="clim">Climate</button>
@@ -904,7 +907,7 @@ window.WXDAY = {
 <script src="data/wx_normals_t_2026-10-29.js"></script>
 <script src="data/wx_runs_2026-10-29.js"></script>
 <script src="wxt_alerts_v05.js"></script>
-<script src="wxt_check_v02.js"></script>
+<script src="wxt_check_v03.js"></script>
 <script>(async function() {
   const KEY = "wxtable_proto_v1", LIVE = "wxtable_live_v1", LIMIT = 1e4, HOUR = 36e5;
   window.WX_FIRST = (() => {
@@ -1733,7 +1736,7 @@ function goDay(d) {
   }, 800);
   tw.scrollTo({ left: dayTarget * step, behavior: "smooth" });
 }
-const AUTO_LATE = 5 * 6e4, ALERT_EVERY = 10 * 6e4, LOADED = performance.timeOrigin || Date.now();
+const AUTO_LATE = 5 * 6e4 + Math.floor(Math.random() * 5 * 6e4), ALERT_EVERY = 10 * 6e4, LOADED = performance.timeOrigin || Date.now();
 const ALERT_KEEP = ["event", "severity", "urgency", "certainty", "onset", "effective", "ends", "expires", "headline", "senderName", "areaDesc"];
 let autoT = null, alertT = null, alertsAt = LOADED, alertBusy = false, alertDrawT = null;
 const busyTyping = () => {
@@ -3428,7 +3431,7 @@ $("privBtn").addEventListener("click", () => {
   b.classList.toggle("on", open);
   b.setAttribute("aria-expanded", String(open));
 });
-const VERSION = "0.67.15", VERSION_DATE = "2026-11-22";
+const VERSION = "0.67.16", VERSION_DATE = "2026-11-22";
 const SHOWN = VERSION.replace(/^0\./, "");
 $("brand").textContent = `WxTable ${SHOWN}`;
 $("aboutName").textContent = `WxTable™ v${SHOWN} · ${VERSION_DATE}`;
