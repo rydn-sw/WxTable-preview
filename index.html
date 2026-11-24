@@ -71,7 +71,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>WxTable 67.16</title>
+<title>WxTable 67.17</title>
 <link rel="icon" type="image/png" sizes="32x32" href="WxTable_favicon_32_v01.png">
 <script>(function() {
   var on = false;
@@ -98,7 +98,9 @@
 </script>
 <meta name="theme-color" content="#000000">
 <style>
-/* WxTable 67.16 (2026-11-22): a profile sent as a link keeps Auto refresh's hours (wxt_check_v03.js; JG: "2 and 3");
+/* WxTable 67.17 (2026-11-24): the Climate tab is hidden unless chosen (Options, or the tab itself), and hidden, a place
+   added fetches no climate data, about 235 of Open-Meteo's calls each (JG: "The climate tab can hidden"; "Options choice, hidden").
+   67.16 (2026-11-22): a profile sent as a link keeps Auto refresh's hours (wxt_check_v03.js; JG: "2 and 3");
    no NEW on the 7 Day Precip button (JG: "Turn off the "new" pill in 7 day forecast"); Auto refresh reloads 5 to 10
    minutes after the expected model run, at random, not all at 5 (JG: "Yes, add it").
    67.15 (2026-11-22): Auto refresh every 3, 4, 5, 6, 8, 10 or 12 hours, default 6, no Off (JG: "Add 3, 4, 5, 8,
@@ -694,6 +696,7 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
 </div>
 
 <div id="pClim" class="pane" hidden>
+  <div class="sec" id="climctl" style="margin:4px 0"></div>   <!-- 67.17: Climate tab shown or hidden, in step with Options -->
   <h2>Recent weather against the average for the same dates. See key below the table</h2>
   <div class="ct" id="ct"></div>
   <div class="ckeys" id="ckeys"></div>
@@ -1187,6 +1190,7 @@ else TOUCH_MQ.addListener(onTouchChange);
 let S = {
   auto: "6",
   kiosk: false,
+  climTab: "hidden",
   ftPos: "bottom",
   layout: "EB",
   lines: "g88",
@@ -1226,6 +1230,7 @@ const autoFix = () => {
   S.auto = AUTO_H.indexOf(+S.auto) < 0 ? "6" : String(+S.auto);
 };
 autoFix();
+const climOn = () => S.climTab === "shown";
 let saveOk = true;
 function save() {
   try {
@@ -1911,13 +1916,14 @@ function fitStrip() {
   };
   strip.classList.remove("tight");
   OTHER_TABS.forEach((k) => {
-    tab(k).hidden = false;
+    tab(k).hidden = k === "clim" && !climOn();
   });
   other.hidden = true;
   if ($("ndays").parentNode !== strip) $("layout").after($("ndays"));
   if ($("nav").parentNode !== strip) $("ndays").after($("nav"));
   for (const k of OTHER_TABS) {
     if (!over()) break;
+    if (k === "clim" && !climOn()) continue;
     tab(k).hidden = true;
     moved.unshift(k);
     other.hidden = false;
@@ -1936,7 +1942,7 @@ $("other").addEventListener("change", () => {
   showTab();
 });
 function showTab() {
-  if (!TABS[S.tab]) S.tab = "table";
+  if (!TABS[S.tab] || S.tab === "clim" && !climOn()) S.tab = "table";
   $("nav").hidden = S.tab !== "table";
   measureTK();
   fitStrip();
@@ -2188,7 +2194,7 @@ $("aadd").addEventListener("click", async () => {
         x.noAlerts = true;
       } else notes.push("alerts not checked (" + WXWHY.say("the Weather Service", e) + ")");
     }
-    try {
+    if (climOn()) try {
       x.clim = await fetchClimate(loc.lat, loc.lon);
     } catch (e) {
       notes.push("climate not fetched (" + WXWHY.say("Open-Meteo", e) + ")");
@@ -3009,6 +3015,19 @@ function fitPrecip() {
   if ($("pPrecip").hidden) return;
   t.style.maxHeight = Math.max(160, window.innerHeight - (t.getBoundingClientRect().top + window.scrollY) - 8) + "px";
 }
+const climSel = (id) => sel(id, [{ k: "hidden", name: "Hidden (default)" }, { k: "shown", name: "Shown" }], climOn() ? "shown" : "hidden");
+function drawClimCtl() {
+  $("climctl").innerHTML = "Climate tab: " + climSel("climsel2");
+  $("climsel2").onchange = () => setClim($("climsel2").value);
+}
+function setClim(v) {
+  S.climTab = v === "shown" ? "shown" : "hidden";
+  save();
+  if ($("climsel")) $("climsel").value = S.climTab;
+  drawClimCtl();
+  showTab();
+  save();
+}
 const sel = (id, list, val) => `<select id="${id}">${list.map((o) => `<option value="${o.k}"${o.k === val ? " selected" : ""}>${o.name}</option>`).join("")}</select>`;
 const toggle = (id, what, on) => `<label class="ck"><input type="checkbox" id="${id}"${on ? " checked" : ""}>${what}</label>`;
 const unitsCtl = () => `<select data-u="units" aria-label="Temperature unit">${UNITS.map((o) => `<option value="${o.k}"${o.k === S.units ? " selected" : ""}>${o.name}</option>`).join("")}</select> <select data-u="amt" aria-label="Precip amount unit">${AMTU.map((o) => `<option value="${o.k}"${o.k === (MM() ? "mm" : "in") ? " selected" : ""}>${o.name}</option>`).join("")}</select>`;
@@ -3036,6 +3055,8 @@ function drawSets() {
     ["Auto refresh", sel("auto", AUTO_H.map((n) => ({ k: String(n), name: `Forecast every ${n} hours${n === 6 ? " (default)" : ""}` })), S.auto), `<span class="sec">While the page is on screen: a new forecast at most every ${S.auto} hours, a few minutes after a model run is expected (the times on the forecast line), not while you type or choose; Weather Service alerts checked every 10 minutes. Manual Refresh fetches at once. Fewer forecasts ask less of Open-Meteo, a free service.</span>`],
     // 67.15
     ...Object.entries(FT_STYLES).map(([k, v]) => [`${k} ${v}`, "<span></span>", ftSample(k)]),
+    ["Climate tab", climSel("climsel"), '<span class="sec">Shown: each place you add also fetches 30 years of daily weather for this tab, a large data download. If you use this option, please consider a donation. Hidden: no climate data is downloaded.</span>'],
+    // 67.17
     ["Times in", sel("tzsel", [{ k: "device", name: "Your device's time zone" }, { k: "place", name: "Each place's own time zone" }], S.tz === "place" ? "place" : "device"), `<span class="sec">Each place's own: watch, warning and advisory times in that place's time zone. Times that belong to no one place (when the forecast was made, 7 Day Precip's days) stay in your device's zone. The day and night halves in the table are always each place's own 6 AM to 6 PM.</span>`],
     ["Units", `<span>${unitsCtl()}</span>`, `<div class="sample">${sample("80px", sbox(shl(68, 45, "<span></span><span></span>")))}</div>`],
     ["Cell lines", sel("lines", LINES, S.lines), grid],
@@ -3093,6 +3114,7 @@ function drawSets() {
     save();
     refresh();
   };
+  $("climsel").onchange = () => setClim($("climsel").value);
   $("lines").onchange = () => {
     S.lines = $("lines").value;
     save();
@@ -3431,7 +3453,7 @@ $("privBtn").addEventListener("click", () => {
   b.classList.toggle("on", open);
   b.setAttribute("aria-expanded", String(open));
 });
-const VERSION = "0.67.16", VERSION_DATE = "2026-11-22";
+const VERSION = "0.67.17", VERSION_DATE = "2026-11-24";
 const SHOWN = VERSION.replace(/^0\./, "");
 $("brand").textContent = `WxTable ${SHOWN}`;
 $("aboutName").textContent = `WxTable™ v${SHOWN} · ${VERSION_DATE}`;
@@ -3466,6 +3488,7 @@ fillLayouts();
 fillAhead();
 fillRain();
 drawLocs();
+drawClimCtl();
 refresh();
 showTab();
 openLink();
