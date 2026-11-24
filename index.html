@@ -71,7 +71,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>WxTable 67.17</title>
+<title>WxTable 67.18</title>
 <link rel="icon" type="image/png" sizes="32x32" href="WxTable_favicon_32_v01.png">
 <script>(function() {
   var on = false;
@@ -98,7 +98,9 @@
 </script>
 <meta name="theme-color" content="#000000">
 <style>
-/* WxTable 67.17 (2026-11-24): the Climate tab is hidden unless chosen (Options, or the tab itself), and hidden, a place
+/* WxTable 67.18 (2026-11-24): usage counts for return visits and kiosk-type use, as GoatCounter events (JG: "I'm
+   particularly interested in return visits and kiosk-type use"); see useCounts().
+   67.17 (2026-11-24): the Climate tab is hidden unless chosen (Options, or the tab itself), and hidden, a place
    added fetches no climate data, about 235 of Open-Meteo's calls each (JG: "The climate tab can hidden"; "Options choice, hidden").
    67.16 (2026-11-22): a profile sent as a link keeps Auto refresh's hours (wxt_check_v03.js; JG: "2 and 3");
    no NEW on the 7 Day Precip button (JG: "Turn off the "new" pill in 7 day forecast"); Auto refresh reloads 5 to 10
@@ -797,7 +799,7 @@ textarea { display:block; margin-top:6px; background:#000; color:#fff; border:1p
   <h2>Apps we like</h2>
   <div style="max-width:640px">Smoke: <a href="https://www.airnow.gov/" target="_blank" rel="noopener">AirNow</a> &bull; Wildfires with county alerts you set: <a href="https://www.watchduty.org/" target="_blank" rel="noopener">Watch Duty</a> &bull; Radar with flood alerts: <a href="https://myradar.com/" target="_blank" rel="noopener">MyRadar</a></div>
   <h2>Data</h2>
-  <div class="sec" style="font-size:13px;max-width:640px">Forecasts and past days: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Weather data by Open-Meteo.com</a> (free for non-commercial use, with credit). Weather Service alerts: National Weather Service, <a href="https://www.weather.gov/documentation/services-web-api" target="_blank" rel="noopener">api.weather.gov</a> (public domain); US only, so places elsewhere show none. The usual weather for each date, and the Climate tab: Open-Meteo Historical Weather API, 1991–2020. Forecast accuracy (Forecasting tab): WxTable's own research, 2026-10-24. Visits: counted by <a href="https://www.goatcounter.com/" target="_blank" rel="noopener">GoatCounter</a>, without cookies and without anything that identifies you; your choices and places stay in this browser.</div>
+  <div class="sec" style="font-size:13px;max-width:640px">Forecasts and past days: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Weather data by Open-Meteo.com</a> (free for non-commercial use, with credit). Weather Service alerts: National Weather Service, <a href="https://www.weather.gov/documentation/services-web-api" target="_blank" rel="noopener">api.weather.gov</a> (public domain); US only, so places elsewhere show none. The usual weather for each date, and the Climate tab: Open-Meteo Historical Weather API, 1991–2020. Forecast accuracy (Forecasting tab): WxTable's own research, 2026-10-24. Visits: counted by <a href="https://www.goatcounter.com/" target="_blank" rel="noopener">GoatCounter</a>, without cookies and without anything that identifies you; your choices and places stay in this browser. Also counted the same way, as ranges: how long since this browser last and first opened WxTable (the two dates stay in this browser), and how long a screen stays on with Auto refresh.</div>
   <h2>This device</h2>   <!-- at the end of About (JG, 2026-10-30) -->
   <div class="sec" style="font-size:13px;max-width:640px">What this browser reports about the device, and what the page can measure. WxTable adapts to the measured things (size, touch, settings), not to the device's name. It updates when you turn the device or change the window.</div>
   <div id="devPic" class="devpic"></div>
@@ -1748,6 +1750,109 @@ const busyTyping = () => {
   const a = document.activeElement;
   return !!a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName);
 };
+const USE_KEY = "wxtable_use_v1";
+const useSend = /* @__PURE__ */ (() => {
+  const q = [];
+  let tries = 0, running = false;
+  const flush = () => {
+    const g = window.goatcounter;
+    if (g && typeof g.count === "function") {
+      while (q.length) {
+        const [path, title] = q.shift();
+        try {
+          g.count({ path, title, event: true });
+        } catch (e) {
+        }
+      }
+      running = false;
+      return;
+    }
+    if (++tries < 60) setTimeout(flush, 1e3);
+    else {
+      q.length = 0;
+      running = false;
+    }
+  };
+  return (path, title) => {
+    q.push([path, title]);
+    if (!running) {
+      running = true;
+      flush();
+    }
+  };
+})();
+const ss = {
+  get: (k) => {
+    try {
+      return sessionStorage.getItem(k);
+    } catch (e) {
+      return null;
+    }
+  },
+  set: (k, v) => {
+    try {
+      sessionStorage.setItem(k, v);
+    } catch (e) {
+    }
+  },
+  del: (k) => {
+    try {
+      sessionStorage.removeItem(k);
+    } catch (e) {
+    }
+  }
+};
+function markReload(how) {
+  ss.set("wxt_reload", how + ":" + Date.now());
+}
+function useCounts() {
+  const now = Date.now(), DAY = 864e5, mark = (ss.get("wxt_reload") || "").split(":");
+  ss.del("wxt_reload");
+  const how = mark[0] && now - +mark[1] < 12e4 ? mark[0] : null;
+  const daily = (path, title) => {
+    const k = "wxt_d_" + path, t = +ss.get(k);
+    if (!(t > 0) || now - t >= DAY) {
+      useSend(path, title);
+      ss.set(k, String(now));
+    }
+  };
+  if (!how) {
+    let u = null;
+    try {
+      u = JSON.parse(localStorage.getItem(USE_KEY) || "null");
+    } catch (e) {
+    }
+    if (!u || !(u.first > 0) || !(u.last > 0)) useSend("open-first", "Opened for the first time in this browser");
+    else {
+      const gap = (now - u.last) / DAY, age = (now - u.first) / DAY;
+      const g = gap < 1 ? ["same-day", "the same day"] : gap < 3 ? ["1-2d", "1 to 2 days"] : gap < 8 ? ["3-7d", "3 to 7 days"] : gap < 31 ? ["8-30d", "8 to 30 days"] : ["31d+", "over 30 days"];
+      const a = age < 7 ? ["lt1w", "under a week"] : age < 30 ? ["1w-1m", "a week to a month"] : age < 91 ? ["1-3m", "1 to 3 months"] : ["3m+", "over 3 months"];
+      useSend("open-back-" + g[0], "Opened again after " + g[1]);
+      useSend("open-since-" + a[0], "First opened " + a[1] + " ago");
+    }
+    try {
+      localStorage.setItem(USE_KEY, JSON.stringify({ first: u && u.first > 0 ? u.first : now, last: now }));
+    } catch (e) {
+    }
+    ss.set("wxt_run", String(now));
+    ss.del("wxt_runsent");
+  } else {
+    if (how === "button") useSend("refresh-pressed", "Refresh pressed");
+    const run = +ss.get("wxt_run");
+    if (how === "auto" && run > 0) {
+      const sent = (ss.get("wxt_runsent") || "").split(",");
+      [1, 3, 7, 30].forEach((d) => {
+        if (now - run >= d * DAY && sent.indexOf(String(d)) < 0) {
+          useSend("kiosk-up-" + d + "d", "Kept on by Auto refresh for " + d + (d === 1 ? " day" : " days"));
+          sent.push(String(d));
+        }
+      });
+      ss.set("wxt_runsent", sent.filter(Boolean).join(","));
+    }
+  }
+  if (S.kiosk) daily("kiosk-mode-running", "Running with Kiosk mode on");
+  if (FS.app()) daily("app-window", "Opened as an app window (Home Screen or full screen)");
+}
 function autoCheck() {
   clearTimeout(autoT);
   autoT = null;
@@ -1765,6 +1870,7 @@ function autoCheck() {
     autoT = setTimeout(autoCheck, 6e4);
     return;
   }
+  markReload("auto");
   location.reload();
 }
 async function alertCheck() {
@@ -1861,9 +1967,11 @@ $("kiosk").addEventListener("change", (e) => {
   S.kiosk = e.target.checked;
   save();
   if (window.WX_KIOSK) window.WX_KIOSK(S.kiosk);
+  if (S.kiosk) useSend("kiosk-mode-set", "Kiosk mode turned on");
 });
 $("refresh").addEventListener("click", (e) => {
   e.preventDefault();
+  markReload("button");
   setTimeout(() => location.reload(), 150);
 });
 $("dprev").addEventListener("click", () => goDay(-1));
@@ -3453,7 +3561,7 @@ $("privBtn").addEventListener("click", () => {
   b.classList.toggle("on", open);
   b.setAttribute("aria-expanded", String(open));
 });
-const VERSION = "0.67.17", VERSION_DATE = "2026-11-24";
+const VERSION = "0.67.18", VERSION_DATE = "2026-11-24";
 const SHOWN = VERSION.replace(/^0\./, "");
 $("brand").textContent = `WxTable ${SHOWN}`;
 $("aboutName").textContent = `WxTable™ v${SHOWN} · ${VERSION_DATE}`;
@@ -3491,6 +3599,10 @@ drawLocs();
 drawClimCtl();
 refresh();
 showTab();
+try {
+  useCounts();
+} catch (e) {
+}
 openLink();
 window.addEventListener("hashchange", () => {
   if (LINK_RE.test(location.hash)) openLink();
